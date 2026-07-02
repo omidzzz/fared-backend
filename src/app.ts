@@ -36,7 +36,21 @@ const app = express();
 app.use(helmet());
 app.use(
   cors({
-    origin: env.ALLOWED_ORIGINS.split(",").map((o) => o.trim()),
+    origin: (origin, callback) => {
+      const allowedOrigins = env.ALLOWED_ORIGINS.split(",").map((o) => o.trim());
+      
+      // Allow all origins if wildcard is set
+      if (allowedOrigins.includes("*")) {
+        return callback(null, true);
+      }
+      
+      // Check if origin is in allowed list
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      return callback(new Error("Not allowed by CORS"), false);
+    },
     credentials: true,
   })
 );
