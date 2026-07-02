@@ -1,0 +1,5 @@
+{
+  "app": "fared-backend",
+  "port": 4000,
+  "platform": "node"
+}
