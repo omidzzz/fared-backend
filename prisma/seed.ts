@@ -1,17 +1,9 @@
 import "dotenv/config";
 import { PrismaClient } from "../src/generated/prisma";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { Pool } from "pg";
 import { Role, CourseLevel, CourseLanguage, TourLevel } from "../src/generated/prisma";
 
-const pool = new Pool({
-  connectionString: process.env["DATABASE_URL"],
-});
-
-const adapter = new PrismaPg(pool);
-
 const prisma = new PrismaClient({
-  adapter,
+  log: ["error"],
 });
 
 async function main() {
@@ -167,7 +159,7 @@ async function main() {
       type: 'stones',
       nameFA: 'لابرادوریت',
       nameEN: 'Labradorite',
-      descriptionFA: 'سنگ تحول و شهود. لابرادوریت با درخشش رنگین‌کمانی خود، سپر محافظتی قدرتمندی ایجاد می‌کند و توانایی‌های شهودی را بیدار می‌سازد.',
+      descriptionFA: 'سنگ تحول و شهود. لابرادوریت با درخشش رنگین‌کمانی خود، سپر محافظتی قدرتمند ایجاد می‌کند و توانایی‌های شهودی را بیدار می‌سازد.',
       descriptionEN: 'Stone of transformation and intuition. Labradorite creates a powerful protective shield with its rainbow-like iridescence while awakening intuitive abilities.',
       price: 520000,
       currency: 'IRT',
