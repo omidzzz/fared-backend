@@ -42,7 +42,11 @@ export function errorHandler(
   }
 
   // Unknown errors
-  console.error("Unhandled error:", err);
+  console.error("========================================");
+  console.error("UNHANDLED ERROR:", err.name);
+  console.error("Message:", err.message);
+  console.error("Stack:", err.stack);
+  console.error("========================================");
   res.status(500).json({
     success: false,
     error:
