@@ -14,7 +14,6 @@ function formatProduct(product: any) {
   return { ...rest, attributes: groupAttributes(product) };
 }
 
-// clothes.service.ts
 export async function getClothes(params?: {
   limit?: number;
   offset?: number;
@@ -23,23 +22,77 @@ export async function getClothes(params?: {
   featured?: string;
   bestseller?: string;
 }) {
-  const { 
-    limit = 12, 
-    offset, 
+  const {
+    limit = 12,
+    offset,
     page,
     search,
     featured,
-    bestseller
+    bestseller,
   } = params || {};
 
+  // Calculate skip from offset or page
   let skip = offset || 0;
   if (page && !offset) {
     skip = (page - 1) * limit;
   }
 
-  console.log('🔍 Service params:', { limit, offset, page, skip });
+  // Build where clause
+  const where: any = {
+    type: "clothes",
+    isActive: true,
+  };
 
+  if (search) {
+    where.OR = [
+      { nameFA: { contains: search, mode: "insensitive" } },
+      { nameEN: { contains: search, mode: "insensitive" } },
+      { descriptionFA: { contains: search, mode: "insensitive" } },
+      { descriptionEN: { contains: search, mode: "insensitive" } },
+    ];
+  }
+
+  if (featured === "true") {
+    where.isFeatured = true;
+  }
+
+  if (bestseller === "true") {
+    where.isBestSeller = true;
+  }
+
+  // Get products and total count in parallel
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      skip: skip,
+      take: limit,
+      include: {
+        images: { orderBy: { sortOrder: "asc" }, take: 1 },
+        attributes: { orderBy: { sortOrder: "asc" } },
+        variants: true,
+        colorOptions: true,
+        category: true,
+        _count: { select: { reviews: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.product.count({ where }),
+  ]);
+
+  return {
+    products: products.map(formatProduct),
+    total,
+    pagination: {
+      limit,
+      offset: skip,
+      page: page || Math.floor(skip / limit) + 1,
+      total,
+      totalPages: Math.ceil(total / limit),
+      hasMore: skip + products.length < total,
+    },
+  };
 }
+
 export async function getClothesBySlug(slug: string) {
   const product = await prisma.product.findFirst({
     where: { slug, type: "clothes", isActive: true },

@@ -7,14 +7,12 @@ import { queryClothesSchema } from "./clothes.schema";
 export async function getClothesHandler(
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ): Promise<void> {
   try {
-    console.log('🔍 Backend received query:', req.query);
-    
+    // Parse and validate query parameters
     const query = queryClothesSchema.parse(req.query);
-    console.log('🔍 Parsed query:', query);
-    
+
     const result = await clothesService.getClothes({
       page: query.page,
       offset: query.offset,
@@ -23,13 +21,7 @@ export async function getClothesHandler(
       featured: query.featured,
       bestseller: query.bestseller,
     });
-    
-    console.log('🔍 Backend result:', {
-      productsCount: result.products.length,
-      total: result.total,
-      pagination: result.pagination,
-    });
-    
+
     sendSuccess(res, {
       products: result.products,
       count: result.total,
@@ -39,6 +31,7 @@ export async function getClothesHandler(
     next(error);
   }
 }
+
 export async function getClothesBySlugHandler(
   req: Request,
   res: Response,
