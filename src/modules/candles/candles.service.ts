@@ -26,9 +26,16 @@ export async function getCandles() {
   return products.map(formatProduct);
 }
 
-export async function getCandleBySlug(slug: string) {
+export async function getCandleBySlug(slugOrId: string) {
   const product = await prisma.product.findFirst({
-    where: { slug, type: "candles", isActive: true },
+    where: {
+      type: "candles",
+      isActive: true,
+      OR: [
+        { slug: slugOrId },
+        { id: slugOrId },
+      ],
+    },
     include: {
       images: { orderBy: { sortOrder: "asc" } },
       attributes: { orderBy: { sortOrder: "asc" } },

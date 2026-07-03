@@ -26,9 +26,16 @@ export async function getStones() {
   return products.map(formatProduct);
 }
 
-export async function getStoneBySlug(slug: string) {
+export async function getStoneBySlug(slugOrId: string) {
   const product = await prisma.product.findFirst({
-    where: { slug, type: "stones", isActive: true },
+    where: {
+      type: "stones",
+      isActive: true,
+      OR: [
+        { slug: slugOrId },
+        { id: slugOrId },
+      ],
+    },
     include: {
       images: { orderBy: { sortOrder: "asc" } },
       attributes: { orderBy: { sortOrder: "asc" } },

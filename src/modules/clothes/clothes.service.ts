@@ -93,9 +93,17 @@ export async function getClothes(params?: {
   };
 }
 
-export async function getClothesBySlug(slug: string) {
+export async function getClothesBySlug(slugOrId: string) {
+  // Try by slug first, then by id as fallback
   const product = await prisma.product.findFirst({
-    where: { slug, type: "clothes", isActive: true },
+    where: {
+      type: "clothes",
+      isActive: true,
+      OR: [
+        { slug: slugOrId },
+        { id: slugOrId },
+      ],
+    },
     include: {
       images: { orderBy: { sortOrder: "asc" } },
       attributes: { orderBy: { sortOrder: "asc" } },

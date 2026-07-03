@@ -26,9 +26,16 @@ export async function getAccessories() {
   return products.map(formatProduct);
 }
 
-export async function getAccessoryBySlug(slug: string) {
+export async function getAccessoryBySlug(slugOrId: string) {
   const product = await prisma.product.findFirst({
-    where: { slug, type: "accessories", isActive: true },
+    where: {
+      type: "accessories",
+      isActive: true,
+      OR: [
+        { slug: slugOrId },
+        { id: slugOrId },
+      ],
+    },
     include: {
       images: { orderBy: { sortOrder: "asc" } },
       attributes: { orderBy: { sortOrder: "asc" } },
