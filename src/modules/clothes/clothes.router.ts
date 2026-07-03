@@ -7,6 +7,7 @@ import {
 
 const router = Router();
 
+// This will handle pagination when query params are present
 router.get("/", getClothesHandler);
 router.get("/:slug", getClothesBySlugHandler);
 

@@ -13,7 +13,6 @@ export async function getClothesHandler(
     // Parse and validate query parameters
     const query = queryClothesSchema.parse(req.query);
 
-    // Get products with pagination
     const result = await clothesService.getClothes({
       page: query.page,
       offset: query.offset,
@@ -23,7 +22,6 @@ export async function getClothesHandler(
       bestseller: query.bestseller,
     });
 
-    // Return with pagination info
     sendSuccess(res, {
       products: result.products,
       count: result.total,

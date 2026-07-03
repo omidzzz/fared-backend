@@ -15,23 +15,23 @@ function formatProduct(product: any) {
 }
 
 export async function getClothes(params?: {
-  page?: number;
-  offset?: number;
   limit?: number;
+  offset?: number;
+  page?: number;
   search?: string;
   featured?: string;
   bestseller?: string;
 }) {
   const {
-    page,
-    offset,
     limit = 12,
+    offset,
+    page,
     search,
     featured,
     bestseller,
   } = params || {};
 
-  // Calculate offset from page if provided
+  // Calculate skip from offset or page
   let skip = offset || 0;
   if (page && !offset) {
     skip = (page - 1) * limit;
@@ -43,7 +43,6 @@ export async function getClothes(params?: {
     isActive: true,
   };
 
-  // Add search filter
   if (search) {
     where.OR = [
       { nameFA: { contains: search, mode: "insensitive" } },
@@ -53,12 +52,10 @@ export async function getClothes(params?: {
     ];
   }
 
-  // Add featured filter
   if (featured === "true") {
     where.isFeatured = true;
   }
 
-  // Add bestseller filter
   if (bestseller === "true") {
     where.isBestSeller = true;
   }
@@ -84,13 +81,14 @@ export async function getClothes(params?: {
 
   return {
     products: products.map(formatProduct),
-    total, // ✅ Return total count
+    total,
     pagination: {
       limit,
       offset: skip,
       page: page || Math.floor(skip / limit) + 1,
       total,
-      hasMore: products.length < total,
+      totalPages: Math.ceil(total / limit),
+      hasMore: skip + products.length < total,
     },
   };
 }
