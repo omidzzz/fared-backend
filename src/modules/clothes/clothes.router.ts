@@ -1,5 +1,9 @@
+// clothes.routes.ts
 import { Router } from "express";
-import { getClothesHandler, getClothesBySlugHandler } from "./clothes.controller";
+import {
+  getClothesHandler,
+  getClothesBySlugHandler,
+} from "./clothes.controller";
 
 const router = Router();
 
