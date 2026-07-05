@@ -11,7 +11,13 @@ function groupAttributes(product: any) {
 
 function formatProduct(product: any) {
   const { attributes, ...rest } = product;
-  return { ...rest, attributes: groupAttributes(product) };
+  // Ensure variants and colorOptions are preserved
+  return { 
+    ...rest, 
+    attributes: groupAttributes(product),
+    variants: product.variants || [],
+    colorOptions: product.colorOptions || [],
+  };
 }
 
 export async function getClothes(params?: {

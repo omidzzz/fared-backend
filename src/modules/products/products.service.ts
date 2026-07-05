@@ -32,6 +32,8 @@ export async function getProducts(filters: {
         images: { orderBy: { sortOrder: "asc" }, take: 1 },
         category: true,
         _count: { select: { reviews: true } },
+        variants: true,
+        colorOptions: true,
       },
       orderBy: { createdAt: "desc" },
     }),
@@ -47,6 +49,8 @@ export async function getFeaturedProducts() {
     include: {
       images: { orderBy: { sortOrder: "asc" }, take: 1 },
       category: true,
+      variants: true,
+      colorOptions: true,
     },
     take: 20,
   });
@@ -66,6 +70,8 @@ export async function searchProducts(q: string) {
     include: {
       images: { orderBy: { sortOrder: "asc" }, take: 1 },
       category: true,
+      variants: true,
+      colorOptions: true,
     },
     take: 20,
   });
@@ -78,6 +84,8 @@ export async function getProductsByCategory(cat: string) {
       images: { orderBy: { sortOrder: "asc" }, take: 1 },
       category: true,
       _count: { select: { reviews: true } },
+      variants: true,
+      colorOptions: true,
     },
     orderBy: { createdAt: "desc" },
   });
