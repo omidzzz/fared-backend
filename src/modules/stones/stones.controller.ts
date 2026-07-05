@@ -1,15 +1,23 @@
 import { Request, Response, NextFunction } from "express";
 import { sendSuccess } from "../../utils/response";
 import * as stonesService from "./stones.service";
+import { queryStoneSchema } from "./stones.schema";
 
 export async function getStonesHandler(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {
   try {
-    const products = await stonesService.getStones();
-    sendSuccess(res, products);
+    const query = queryStoneSchema.parse(req.query);
+    const result = await stonesService.getStones({
+      page: query.page,
+      limit: query.limit,
+      search: query.search,
+      featured: query.featured === "true",
+      property: query.property,
+    });
+    sendSuccess(res, result);
   } catch (error) {
     next(error);
   }
