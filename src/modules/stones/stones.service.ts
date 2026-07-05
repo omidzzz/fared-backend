@@ -13,38 +13,57 @@ function formatProduct(product: any) {
   return { ...rest, attributes: groupAttributes(product) };
 }
 
-export async function getStones() {
-  const products = await prisma.product.findMany({
-    where: { type: "stones", isActive: true },
-    include: {
-      images: { orderBy: { sortOrder: "asc" }, take: 1 },
-      attributes: { orderBy: { sortOrder: "asc" } },
-      category: true,
-    },
-    orderBy: { createdAt: "desc" },
+export async function getStones(filters?: { page?: number; limit?: number; search?: string; featured?: boolean; property?: string; }) {
+  const where: any = { type: "stones", isActive: true };
+
+  if (filters?.search) {
+    where.OR = [
+      { nameEN: { contains: filters.search, mode: "insensitive" } },
+      { nameFA: { contains: filters.search, mode: "insensitive" } },
+    ];
+  }
+
+  if (filters?.featured !== undefined) {
+    where.isFeatured = filters.featured;
+  }
+
+  if (filters?.property) {
+    where.attributes = {
+      some: {
+        key: "tagsEN",
+        valueEN: { contains: filters.property, mode: "insensitive" },
+      },
+    };
+  }
+
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      include: {
+        images: { orderBy: { sortOrder: "asc" }, take: 1 },
+        attributes: { orderBy: { sortOrder: "asc" } },
+        category: true,
+      },
+      orderBy: { createdAt: "desc" },
+      skip: ((filters?.page || 1) - 1) * (filters?.limit || 12),
+      take: filters?.limit || 12,
+    }),
+    prisma.product.count({ where }),
+  ]);
+
+  console.log('🔍 Backend Stones Query:', {
+    where,
+    total,
+    count: products.length,
+    sampleTypes: products.slice(0, 3).map(p => ({ id: p.id, type: p.type, isActive: p.isActive, name: p.nameFA }))
   });
-  return products.map(formatProduct);
+
+  return {
+    products: products.map(formatProduct),
+    total,
+    page: filters?.page || 1,
+    limit: filters?.limit || 12,
+    totalPages: Math.ceil(total / (filters?.limit || 12)),
+  };
 }
 
-export async function getStoneBySlug(slugOrId: string) {
-  const product = await prisma.product.findFirst({
-    where: {
-      type: "stones",
-      isActive: true,
-      OR: [
-        { slug: slugOrId },
-        { id: slugOrId },
-      ],
-    },
-    include: {
-      images: { orderBy: { sortOrder: "asc" } },
-      attributes: { orderBy: { sortOrder: "asc" } },
-      category: true,
-      reviews: {
-        where: { isApproved: true },
-        include: { user: { select: { id: true, nameFA: true, avatar: true } } },
-      },
-    },
-  });
-  return product ? formatProduct(product) : null;
-}
