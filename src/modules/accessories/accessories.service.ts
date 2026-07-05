@@ -23,16 +23,7 @@ export async function getAccessories() {
     },
     orderBy: { createdAt: "desc" },
   });
-  
-  console.log('🔍 Backend Accessories Query:', {
-    total: products.length,
-    sample: products.slice(0, 3).map(p => ({ id: p.id, type: p.type, isActive: p.isActive, name: p.nameFA }))
-  });
-  
-  return {
-    products: products.map(formatProduct),
-    total: products.length,
-  };
+  return products.map(formatProduct);
 }
 
 export async function getAccessoryBySlug(slugOrId: string) {

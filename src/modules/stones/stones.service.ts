@@ -51,13 +51,6 @@ export async function getStones(filters?: { page?: number; limit?: number; searc
     prisma.product.count({ where }),
   ]);
 
-  console.log('🔍 Backend Stones Query:', {
-    where,
-    total,
-    count: products.length,
-    sampleTypes: products.slice(0, 3).map(p => ({ id: p.id, type: p.type, isActive: p.isActive, name: p.nameFA }))
-  });
-
   return {
     products: products.map(formatProduct),
     total,
