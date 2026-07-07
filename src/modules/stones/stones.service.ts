@@ -60,3 +60,16 @@ export async function getStones(filters?: { page?: number; limit?: number; searc
   };
 }
 
+export async function getStoneBySlug(slug: string) {
+  const product = await prisma.product.findFirst({
+    where: { slug, type: "stones", isActive: true },
+    include: {
+      images: { orderBy: { sortOrder: "asc" } },
+      attributes: { orderBy: { sortOrder: "asc" } },
+      category: true,
+    },
+  });
+  if (!product) throw new Error("Stone not found");
+  return formatProduct(product);
+}
+

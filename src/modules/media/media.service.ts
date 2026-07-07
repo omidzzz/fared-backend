@@ -1,12 +1,12 @@
-// Media service implementation
-export class MediaService {
-  async uploadFile(file: Express.Multer.File, folder: string) {
-    const key = `${folder}/${Date.now()}-${file.originalname}`;
-    // File upload logic here
-    return { url: `local://${key}`, key };
-  }
+import { uploadToStorage, deleteFromStorage } from "../../config/storage";
 
-  async deleteFile(key: string) {
-    // File deletion logic here
-  }
+export async function uploadMedia(userId: string, file: Express.Multer.File, folder: string) {
+  const key = `${folder}/${userId}/${Date.now()}-${file.originalname}`;
+  const url = await uploadToStorage(key, file.buffer, file.mimetype);
+  return { url, key };
+}
+
+export async function deleteMedia(id: string) {
+  // Delete logic here
+  await deleteFromStorage(id);
 }
