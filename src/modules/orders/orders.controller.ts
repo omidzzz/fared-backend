@@ -7,7 +7,7 @@ import * as ordersService from "./orders.service";
 export async function createOrderHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const { paymentMethod, addressId, notes } = createOrderSchema.parse(req.body);
-    const { order } = await ordersService.createOrder(req.user!.id, paymentMethod, addressId, notes);
+    const { order } = await ordersService.createOrder(req.user!.id, paymentMethod, addressId!, notes || "");
 
     if (paymentMethod === "CARD_TO_CARD") {
       sendSuccess(res, {

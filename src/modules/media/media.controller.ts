@@ -10,10 +10,10 @@ export async function uploadMediaHandler(
 ): Promise<void> {
   try {
     const { folder } = uploadMediaSchema.parse(req.body);
-    const mediaFile = await mediaService.uploadMedia(req.user!.id, req.file!, folder);
+    const mediaFile = await mediaService.uploadMedia(req.user!.id, req.file!, folder!);
     sendSuccess(
       res,
-      { url: mediaFile.url, id: mediaFile.id, key: mediaFile.key },
+      { url: mediaFile.url, key: mediaFile.key },
       201,
       "File uploaded"
     );

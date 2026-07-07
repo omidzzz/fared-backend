@@ -1,10 +1,21 @@
 import prisma from "../../config/database";
 import { uploadToStorage } from "../../config/storage";
+import { PaymentMethod, OrderStatus } from "../../generated/prisma";
 
 export async function createOrder(userId: string, paymentMethod: string, addressId: string, notes?: string) {
   // Implementation here
+  const orderNumber = `ORD-${Date.now()}`;
   const order = await prisma.order.create({
-    data: { userId, paymentMethod, addressId, notes, status: "PENDING" },
+    data: {
+      userId,
+      paymentMethod: paymentMethod as PaymentMethod,
+      addressId,
+      notes,
+      status: "PENDING" as OrderStatus,
+      orderNumber,
+      subtotal: 0,
+      total: 0,
+    },
   });
   return { order };
 }
@@ -31,7 +42,7 @@ export async function uploadReceipt(userId: string, orderId: string, file: Expre
   const url = await uploadToStorage(key, file.buffer, file.mimetype);
   
   const receipt = await prisma.paymentReceipt.create({
-    data: { orderId, userId, url, status: "PENDING" },
+    data: { orderId, userId, imageUrl: url, status: "PENDING", amount: 0 },
   });
   
   return receipt;
