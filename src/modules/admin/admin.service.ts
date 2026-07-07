@@ -980,7 +980,6 @@ export async function getAdminTours(page: number, limit: number, search?: string
     endDate: t.endDate?.toISOString().split('T')[0] || "",
     durationDays: t.durationDays,
     duration: `${t.durationDays} days`,
-    location: t.location || "",
     image: t.images?.[0]?.url ?? t.heroImage ?? null,
     maxCapacity: t.spotsTotal,
     spotsLeft: t.spotsLeft,
