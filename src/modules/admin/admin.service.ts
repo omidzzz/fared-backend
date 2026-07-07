@@ -343,7 +343,11 @@ export async function getProducts(page: number, limit: number, search?: string, 
   const normalized = products.map((p) => ({
     ...p,
     nameFa: p.nameFA,
+    nameEn: p.nameEN,
     category: p.category?.slug ?? null,
+    featured: p.isFeatured,
+    isBestSeller: p.isBestSeller,
+    active: p.isActive,
   }));
 
   return { products: normalized, total };
@@ -360,8 +364,16 @@ export async function getProductById(id: string) {
     descriptionEn: product.descriptionEN,
     category: product.category?.slug ?? null,
     images: product.images?.map((img: any) => img.url) ?? [],
+    variants: product.variants?.map((v: any) => ({ id: v.id, name: v.name, value: v.value, sortOrder: v.sortOrder })) ?? [],
+    colorOptions: product.colorOptions?.map((c: any) => ({ id: c.id, name: c.name, hex: c.hex, sortOrder: c.sortOrder })) ?? [],
+    attributes: product.attributes?.map((a: any) => ({ id: a.id, name: a.name, value: a.value })) ?? [],
     active: product.isActive,
     featured: product.isFeatured,
+    isBestSeller: product.isBestSeller,
+    comparePrice: product.comparePrice,
+    currency: product.currency,
+    tagsFA: product.tagsFA,
+    tagsEN: product.tagsEN,
   };
 }
 
@@ -856,7 +868,12 @@ export async function getAdminCourseById(id: string) {
     descriptionEn: course.descriptionEN,
     price: course.price,
     duration: course.duration,
+    durationWeeks: course.durationWeeks,
     durationHours: parseInt(course.duration) || 0,
+    lessons: course.lessons,
+    level: course.level,
+    language: course.language,
+    certificate: course.certificate,
     instructor: course.instructor?.nameFA ?? null,
     instructorImage: null,
     image: course.heroImage ?? null,
@@ -952,9 +969,16 @@ export async function getAdminTours(page: number, limit: number, search?: string
 
   const normalized = tours.map((t) => ({
     ...t,
+    titleFa: t.titleFA,
+    titleEn: t.titleEN,
+    descriptionFa: t.descriptionFA,
+    descriptionEn: t.descriptionEN,
     image: t.images?.[0]?.url ?? t.heroImage ?? null,
     active: t.isActive,
+    featured: t.isFeatured,
     maxCapacity: t.spotsTotal,
+    spotsLeft: t.spotsLeft,
+    duration: `${t.durationDays} days`,
   }));
 
   return { tours: normalized, total };
@@ -973,8 +997,15 @@ export async function getAdminTourById(id: string) {
     descriptionFa: tour.descriptionFA,
     descriptionEn: tour.descriptionEN,
     price: tour.price,
+    destination: tour.destination,
+    dateRange: tour.dateRange,
+    startDate: tour.startDate,
+    endDate: tour.endDate,
+    durationDays: tour.durationDays,
     duration: `${tour.durationDays} days` || "",
     maxCapacity: tour.spotsTotal,
+    spotsLeft: tour.spotsLeft,
+    instructor: tour.instructor,
     image: tour.images?.[0]?.url ?? tour.heroImage ?? null,
     active: tour.isActive,
     featured: tour.isFeatured,
