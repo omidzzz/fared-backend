@@ -968,17 +968,26 @@ export async function getAdminTours(page: number, limit: number, search?: string
   ]);
 
   const normalized = tours.map((t) => ({
-    ...t,
+    id: t.id,
     titleFa: t.titleFA,
     titleEn: t.titleEN,
     descriptionFa: t.descriptionFA,
     descriptionEn: t.descriptionEN,
+    price: t.price,
+    destination: t.destination,
+    dateRange: t.dateRange,
+    startDate: t.startDate?.toISOString().split('T')[0] || "",
+    endDate: t.endDate?.toISOString().split('T')[0] || "",
+    durationDays: t.durationDays,
+    duration: `${t.durationDays} days`,
+    location: t.location || "",
     image: t.images?.[0]?.url ?? t.heroImage ?? null,
-    active: t.isActive,
-    featured: t.isFeatured,
     maxCapacity: t.spotsTotal,
     spotsLeft: t.spotsLeft,
-    duration: `${t.durationDays} days`,
+    instructor: t.instructor || "",
+    featured: t.isFeatured,
+    active: t.isActive,
+    createdAt: t.createdAt,
   }));
 
   return { tours: normalized, total };
