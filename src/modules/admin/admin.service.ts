@@ -352,7 +352,17 @@ export async function getProducts(page: number, limit: number, search?: string, 
 export async function getProductById(id: string) {
   const product = await prisma.product.findUnique({ where: { id }, include: { images: true, attributes: true, variants: true, colorOptions: true, category: true } });
   if (!product) throw new AppError("Product not found", 404);
-  return product;
+  return {
+    ...product,
+    nameFa: product.nameFA,
+    nameEn: product.nameEN,
+    descriptionFa: product.descriptionFA,
+    descriptionEn: product.descriptionEN,
+    category: product.category?.slug ?? null,
+    images: product.images?.map((img: any) => img.url) ?? [],
+    active: product.isActive,
+    featured: product.isFeatured,
+  };
 }
 
 // ── Orders (single) ──────────────────────────────
@@ -842,8 +852,15 @@ export async function getAdminCourseById(id: string) {
     ...course,
     titleFa: course.nameFA,
     titleEn: course.nameEN,
+    descriptionFa: course.descriptionFA,
+    descriptionEn: course.descriptionEN,
+    price: course.price,
+    duration: course.duration,
+    durationHours: parseInt(course.duration) || 0,
     instructor: course.instructor?.nameFA ?? null,
+    instructorImage: null,
     image: course.heroImage ?? null,
+    featured: course.isFeatured,
     active: course.isActive,
   };
 }
@@ -951,9 +968,16 @@ export async function getAdminTourById(id: string) {
   if (!tour) throw new AppError("Tour not found", 404);
   return {
     ...tour,
+    titleFa: tour.titleFA,
+    titleEn: tour.titleEN,
+    descriptionFa: tour.descriptionFA,
+    descriptionEn: tour.descriptionEN,
+    price: tour.price,
+    duration: `${tour.durationDays} days` || "",
+    maxCapacity: tour.spotsTotal,
     image: tour.images?.[0]?.url ?? tour.heroImage ?? null,
     active: tour.isActive,
-    maxCapacity: tour.spotsTotal,
+    featured: tour.isFeatured,
   };
 }
 
