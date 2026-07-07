@@ -13,6 +13,12 @@ export class AppError extends Error {
   }
 }
 
+export function notFound(_req: Request, res: Response, next: NextFunction) {
+  const error = new Error("Route not found") as any;
+  error.statusCode = 404;
+  next(error);
+}
+
 export function errorHandler(
   err: Error,
   req: Request,
