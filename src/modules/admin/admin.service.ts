@@ -348,7 +348,6 @@ export async function updateProduct(id: string, data: any) {
       deleteMany: {},
       create: data.images.map((url: string, i: number) => ({ url, sortOrder: i })),
     };
-    delete updateData.images;
   }
   
   // Handle variants - replace all
@@ -357,7 +356,6 @@ export async function updateProduct(id: string, data: any) {
       deleteMany: {},
       create: data.variants.map((v: any) => ({ label: v.name, stock: 0 })),
     };
-    delete updateData.variants;
   }
   
   // Handle colors - replace all
@@ -366,7 +364,6 @@ export async function updateProduct(id: string, data: any) {
       deleteMany: {},
       create: data.colorOptions.map((c: any) => ({ hex: c.hex, nameFA: c.name, sortOrder: 0 })),
     };
-    delete updateData.colorOptions;
   }
   
   return prisma.product.update({ where: { id }, data: updateData });
