@@ -25,7 +25,13 @@ export function errorHandler(
   res: Response,
   next: NextFunction,
 ) {
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  let statusCode = 500;
+  
+  if (err instanceof AppError) {
+    statusCode = err.statusCode;
+  } else if (res.statusCode !== 200) {
+    statusCode = res.statusCode;
+  }
 
   res.status(statusCode).json({
     success: false,

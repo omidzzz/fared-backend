@@ -12,7 +12,7 @@ export async function getTopicsHandler(
   try {
     const { page, limit } = parsePagination(req.query as any);
     const { topics, total } = await forumService.getTopics(page, limit);
-    sendPaginated(res, topics, total, page, limit);
+    sendPaginated(res, topics, total, page, limit, "topics");
   } catch (error) {
     next(error);
   }

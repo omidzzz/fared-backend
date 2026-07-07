@@ -13,7 +13,7 @@ export async function getProductsHandler(
     const { page, limit } = parsePagination(req.query as any);
     const filters = queryProductSchema.parse(req.query);
     const result = await productsService.getProducts({ page, limit, ...filters });
-    sendPaginated(res, result.products, result.total, page, limit);
+    sendPaginated(res, result.products, result.total, page, limit, "products");
   } catch (error) {
     next(error);
   }

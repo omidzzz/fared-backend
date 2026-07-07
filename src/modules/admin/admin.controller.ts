@@ -16,7 +16,7 @@ export async function getAdminOrdersHandler(req: Request, res: Response, next: N
     const { page, limit } = parsePagination(req.query as any);
     const { status } = req.query;
     const result = await adminService.getAdminOrders(page, limit, status as string | undefined);
-    sendPaginated(res, result.orders, result.total, page, limit);
+    sendPaginated(res, result.orders, result.total, page, limit, "orders");
   } catch (e) { next(e); }
 }
 
@@ -97,7 +97,7 @@ export async function getUsersHandler(req: Request, res: Response, next: NextFun
   try {
     const { page, limit } = parsePagination(req.query as any);
     const result = await adminService.getUsers(page, limit);
-    sendPaginated(res, result.users, result.total, page, limit);
+    sendPaginated(res, result.users, result.total, page, limit, "users");
   } catch (e) { next(e); }
 }
 
@@ -137,7 +137,7 @@ export async function getArticlesHandler(req: Request, res: Response, next: Next
     const { page, limit } = parsePagination(req.query as any);
     const { category, published } = req.query;
     const result = await adminService.getArticles(page, limit, category as string | undefined, published === 'true');
-    sendPaginated(res, result.articles, result.total, page, limit);
+    sendPaginated(res, result.articles, result.total, page, limit, "articles");
   } catch (e) { next(e); }
 }
 
@@ -173,7 +173,7 @@ export async function getBooksHandler(req: Request, res: Response, next: NextFun
   try {
     const { page, limit } = parsePagination(req.query as any);
     const result = await adminService.getBooks(page, limit);
-    sendPaginated(res, result.books, result.total, page, limit);
+    sendPaginated(res, result.books, result.total, page, limit, "books");
   } catch (e) { next(e); }
 }
 
@@ -209,7 +209,7 @@ export async function getPoemsHandler(req: Request, res: Response, next: NextFun
   try {
     const { page, limit } = parsePagination(req.query as any);
     const result = await adminService.getPoems(page, limit);
-    sendPaginated(res, result.poems, result.total, page, limit);
+    sendPaginated(res, result.poems, result.total, page, limit, "poems");
   } catch (e) { next(e); }
 }
 
@@ -245,7 +245,7 @@ export async function getEducationalPostsHandler(req: Request, res: Response, ne
   try {
     const { page, limit } = parsePagination(req.query as any);
     const result = await adminService.getEducationalPosts(page, limit);
-    sendPaginated(res, result.posts, result.total, page, limit);
+    sendPaginated(res, result.posts, result.total, page, limit, "posts");
   } catch (e) { next(e); }
 }
 

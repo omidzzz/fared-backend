@@ -50,16 +50,16 @@ export function sendPaginated<T>(
   data: T[],
   total: number,
   page: number,
-  limit: number
+  limit: number,
+  dataKey: string = "data"
 ): void {
-  const response: PaginatedResponse<T> = {
+  const response: any = {
     success: true,
-    data,
-    pagination: {
+    data: {
+      [dataKey]: data,
       total,
       page,
       limit,
-      totalPages: Math.ceil(total / limit),
     },
   };
   res.status(200).json(response);
