@@ -26,7 +26,7 @@ export async function updateOrderStatusHandler(req: Request, res: Response, next
     const updated = await adminService.updateOrderStatus(
       req.params.id as string, status, trackingCode, req.user!.id
     );
-    sendSuccess(res, updated, 200, "Order status updated");
+    sendSuccess(res, { order: updated }, 200, "Order status updated");
   } catch (e) { next(e); }
 }
 
@@ -101,24 +101,42 @@ export async function getUsersHandler(req: Request, res: Response, next: NextFun
   } catch (e) { next(e); }
 }
 
+// ── Products ─────────────────────────────────────
+
+export async function getProductsHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { page, limit } = parsePagination(req.query as any);
+    const { search, category, featured } = req.query;
+    const result = await adminService.getProducts(page, limit, search as string | undefined, category as string | undefined, featured === 'true');
+    sendPaginated(res, result.products, result.total, page, limit, "products");
+  } catch (e) { next(e); }
+}
+
+export async function getProductByIdHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const product = await adminService.getProductById(req.params.id as string);
+    sendSuccess(res, { product });
+  } catch (e) { next(e); }
+}
+
 export async function createProductHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const product = await adminService.createProduct(req.body);
-    sendSuccess(res, product, 201, "Product created");
+    sendSuccess(res, { product }, 201, "Product created");
   } catch (e) { next(e); }
 }
 
 export async function updateProductHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const product = await adminService.updateProduct(req.params.id as string, req.body);
-    sendSuccess(res, product, 200, "Product updated");
+    sendSuccess(res, { product }, 200, "Product updated");
   } catch (e) { next(e); }
 }
 
 export async function deleteProductHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const product = await adminService.deactivateProduct(req.params.id as string);
-    sendSuccess(res, product, 200, "Product deactivated");
+    sendSuccess(res, { product }, 200, "Product deactivated");
   } catch (e) { next(e); }
 }
 
@@ -127,6 +145,41 @@ export async function scheduleSessionHandler(req: Request, res: Response, next: 
     const { scheduledAt } = scheduleSessionSchema.parse(req.body);
     const session = await adminService.scheduleSession(req.params.id as string, scheduledAt);
     sendSuccess(res, session, 200, "Session scheduled");
+  } catch (e) { next(e); }
+}
+
+// ── Orders (single entity) ───────────────────────
+
+export async function getOrderByIdHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const order = await adminService.getOrderById(req.params.id as string);
+    sendSuccess(res, { order });
+  } catch (e) { next(e); }
+}
+
+// ── Messages / Leads ─────────────────────────────
+
+export async function getMessagesHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { page, limit } = parsePagination(req.query as any);
+    const { read } = req.query;
+    const result = await adminService.getMessages(page, limit, read === undefined ? undefined : read === 'true');
+    sendPaginated(res, result.messages, result.total, page, limit, "messages");
+  } catch (e) { next(e); }
+}
+
+export async function getMessageByIdHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const message = await adminService.getMessageById(req.params.id as string);
+    sendSuccess(res, { message });
+  } catch (e) { next(e); }
+}
+
+export async function markMessageAsReadHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.body;
+    const message = await adminService.markMessageAsRead(id as string);
+    sendSuccess(res, { message });
   } catch (e) { next(e); }
 }
 
@@ -144,28 +197,28 @@ export async function getArticlesHandler(req: Request, res: Response, next: Next
 export async function getArticleByIdHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const article = await adminService.getArticleById(req.params.id as string);
-    sendSuccess(res, article);
+    sendSuccess(res, { article });
   } catch (e) { next(e); }
 }
 
 export async function createArticleHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const article = await adminService.createArticle(req.body);
-    sendSuccess(res, article, 201, "Article created");
+    sendSuccess(res, { article }, 201, "Article created");
   } catch (e) { next(e); }
 }
 
 export async function updateArticleHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const article = await adminService.updateArticle(req.params.id as string, req.body);
-    sendSuccess(res, article, 200, "Article updated");
+    sendSuccess(res, { article }, 200, "Article updated");
   } catch (e) { next(e); }
 }
 
 export async function deleteArticleHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const article = await adminService.deleteArticle(req.params.id as string);
-    sendSuccess(res, article, 200, "Article deleted");
+    sendSuccess(res, { article }, 200, "Article deleted");
   } catch (e) { next(e); }
 }
 
@@ -180,28 +233,28 @@ export async function getBooksHandler(req: Request, res: Response, next: NextFun
 export async function getBookByIdHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const book = await adminService.getBookById(req.params.id as string);
-    sendSuccess(res, book);
+    sendSuccess(res, { book });
   } catch (e) { next(e); }
 }
 
 export async function createBookHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const book = await adminService.createBook(req.body);
-    sendSuccess(res, book, 201, "Book created");
+    sendSuccess(res, { book }, 201, "Book created");
   } catch (e) { next(e); }
 }
 
 export async function updateBookHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const book = await adminService.updateBook(req.params.id as string, req.body);
-    sendSuccess(res, book, 200, "Book updated");
+    sendSuccess(res, { book }, 200, "Book updated");
   } catch (e) { next(e); }
 }
 
 export async function deleteBookHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const book = await adminService.deleteBook(req.params.id as string);
-    sendSuccess(res, book, 200, "Book deleted");
+    sendSuccess(res, { book }, 200, "Book deleted");
   } catch (e) { next(e); }
 }
 
@@ -216,28 +269,28 @@ export async function getPoemsHandler(req: Request, res: Response, next: NextFun
 export async function getPoemByIdHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const poem = await adminService.getPoemById(req.params.id as string);
-    sendSuccess(res, poem);
+    sendSuccess(res, { poem });
   } catch (e) { next(e); }
 }
 
 export async function createPoemHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const poem = await adminService.createPoem(req.body);
-    sendSuccess(res, poem, 201, "Poem created");
+    sendSuccess(res, { poem }, 201, "Poem created");
   } catch (e) { next(e); }
 }
 
 export async function updatePoemHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const poem = await adminService.updatePoem(req.params.id as string, req.body);
-    sendSuccess(res, poem, 200, "Poem updated");
+    sendSuccess(res, { poem }, 200, "Poem updated");
   } catch (e) { next(e); }
 }
 
 export async function deletePoemHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const poem = await adminService.deletePoem(req.params.id as string);
-    sendSuccess(res, poem, 200, "Poem deleted");
+    sendSuccess(res, { poem }, 200, "Poem deleted");
   } catch (e) { next(e); }
 }
 
@@ -252,27 +305,27 @@ export async function getEducationalPostsHandler(req: Request, res: Response, ne
 export async function getEducationalPostByIdHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const post = await adminService.getEducationalPostById(req.params.id as string);
-    sendSuccess(res, post);
+    sendSuccess(res, { post });
   } catch (e) { next(e); }
 }
 
 export async function createEducationalPostHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const post = await adminService.createEducationalPost(req.body);
-    sendSuccess(res, post, 201, "Educational post created");
+    sendSuccess(res, { post }, 201, "Educational post created");
   } catch (e) { next(e); }
 }
 
 export async function updateEducationalPostHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const post = await adminService.updateEducationalPost(req.params.id as string, req.body);
-    sendSuccess(res, post, 200, "Educational post updated");
+    sendSuccess(res, { post }, 200, "Educational post updated");
   } catch (e) { next(e); }
 }
 
 export async function deleteEducationalPostHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const post = await adminService.deleteEducationalPost(req.params.id as string);
-    sendSuccess(res, post, 200, "Educational post deleted");
+    sendSuccess(res, { post }, 200, "Educational post deleted");
   } catch (e) { next(e); }
 }

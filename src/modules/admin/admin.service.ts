@@ -320,6 +320,61 @@ export async function scheduleSession(sessionId: string, scheduledAt: string) {
   return session;
 }
 
+// ── Products (list) ──────────────────────────────
+
+export async function getProducts(page: number, limit: number, search?: string, category?: string, featured?: boolean) {
+  const where: any = { isActive: true };
+  if (search) where.OR = [{ nameFA: { contains: search } }, { nameEN: { contains: search } }];
+  if (category) where.category = { slug: category };
+  if (featured !== undefined) where.isFeatured = featured;
+
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({ where, orderBy: { createdAt: "desc" }, skip: (page - 1) * limit, take: limit }),
+    prisma.product.count({ where }),
+  ]);
+  return { products, total };
+}
+
+export async function getProductById(id: string) {
+  const product = await prisma.product.findUnique({ where: { id }, include: { images: true, attributes: true, variants: true, colorOptions: true, category: true } });
+  if (!product) throw new AppError("Product not found", 404);
+  return product;
+}
+
+// ── Orders (single) ──────────────────────────────
+
+export async function getOrderById(id: string) {
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: { user: { select: { id: true, nameFA: true, phone: true, email: true } }, items: true, receipt: true },
+  });
+  if (!order) throw new AppError("Order not found", 404);
+  return order;
+}
+
+// ── Messages / Enquiries ─────────────────────────
+
+export async function getMessages(page: number, limit: number, read?: boolean) {
+  const where: any = {};
+  if (read !== undefined) where.isRead = read;
+
+  const [messages, total] = await Promise.all([
+    prisma.tourEnquiry.findMany({ where, orderBy: { createdAt: "desc" }, skip: (page - 1) * limit, take: limit }),
+    prisma.tourEnquiry.count({ where }),
+  ]);
+  return { messages, total };
+}
+
+export async function getMessageById(id: string) {
+  const message = await prisma.tourEnquiry.findUnique({ where: { id }, include: { tour: { select: { titleFA: true, destination: true } } } });
+  if (!message) throw new AppError("Message not found", 404);
+  return message;
+}
+
+export async function markMessageAsRead(id: string) {
+  return prisma.tourEnquiry.update({ where: { id }, data: { status: TourEnquiryStatus.CONTACTED } });
+}
+
 // ── CMS ─────────────────────────────────────────────
 
 export async function getArticles(page: number, limit: number, category?: string, published?: boolean) {

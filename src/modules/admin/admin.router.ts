@@ -8,6 +8,9 @@ import {
   getPendingForumHandler, approveTopicHandler, approveReplyHandler,
   getUsersHandler, createProductHandler, updateProductHandler, deleteProductHandler,
   scheduleSessionHandler,
+  getProductsHandler, getProductByIdHandler,
+  getOrderByIdHandler,
+  getMessagesHandler, getMessageByIdHandler, markMessageAsReadHandler,
   getArticlesHandler, getArticleByIdHandler, createArticleHandler, updateArticleHandler, deleteArticleHandler,
   getBooksHandler, getBookByIdHandler, createBookHandler, updateBookHandler, deleteBookHandler,
   getPoemsHandler, getPoemByIdHandler, createPoemHandler, updatePoemHandler, deletePoemHandler,
@@ -20,6 +23,7 @@ router.use(authenticate, requireAdmin);
 
 router.get("/stats", getStatsHandler);
 router.get("/orders", getAdminOrdersHandler);
+router.get("/orders/:id", getOrderByIdHandler);
 router.put("/orders/:id/status", updateOrderStatusHandler);
 router.get("/receipts", getReceiptsHandler);
 router.put("/receipts/:id/approve", approveReceiptHandler);
@@ -33,10 +37,15 @@ router.get("/forum", getPendingForumHandler);
 router.put("/forum/topics/:id/approve", approveTopicHandler);
 router.put("/forum/replies/:id/approve", approveReplyHandler);
 router.get("/users", getUsersHandler);
+router.get("/products", getProductsHandler);
+router.get("/products/:id", getProductByIdHandler);
 router.post("/products", createProductHandler);
 router.put("/products/:id", updateProductHandler);
 router.delete("/products/:id", deleteProductHandler);
 router.patch("/mentorship/sessions/:id/schedule", scheduleSessionHandler);
+router.get("/messages", getMessagesHandler);
+router.get("/messages/:id", getMessageByIdHandler);
+router.put("/messages/:id/read", markMessageAsReadHandler);
 
 // ── CMS ─────────────────────────────────────────────
 router.get("/articles", getArticlesHandler);
