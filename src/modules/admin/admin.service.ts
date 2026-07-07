@@ -286,9 +286,44 @@ export async function getUsers(page: number, limit: number) {
 
 export async function createProduct(data: any) {
   const { generateSlug } = await import("../../utils/slug");
-  return prisma.product.create({
-    data: { ...data, slug: data.slug || generateSlug(data.nameFA) },
-  });
+  const { images, variants, colorOptions, ...rest } = data;
+  
+  const productData: any = { ...rest };
+  productData.slug = data.slug || generateSlug(data.nameFA);
+  
+  // Map field names
+  if (data.nameFa !== undefined) productData.nameFA = data.nameFa;
+  if (data.nameEn !== undefined) productData.nameEN = data.nameEn;
+  if (data.descriptionFa !== undefined) productData.descriptionFA = data.descriptionFa;
+  if (data.descriptionEn !== undefined) productData.descriptionEN = data.descriptionEn;
+  if (data.featured !== undefined) productData.isFeatured = Boolean(data.featured);
+  if (data.isBestSeller !== undefined) productData.isBestSeller = Boolean(data.isBestSeller);
+  if (data.active !== undefined) productData.isActive = Boolean(data.active);
+  if (data.category !== undefined) productData.category = { connect: { slug: data.category } };
+  if (data.stock !== undefined) productData.stock = Number(data.stock);
+  if (data.price !== undefined) productData.price = Number(data.price);
+  if (data.comparePrice !== undefined) productData.comparePrice = Number(data.comparePrice);
+  if (data.tagsFA !== undefined) productData.tagsFA = data.tagsFA;
+  if (data.tagsEN !== undefined) productData.tagsEN = data.tagsEN;
+  
+  // Handle relations
+  if (images && Array.isArray(images)) {
+    productData.images = {
+      create: images.map((url: string, i: number) => ({ url, sortOrder: i })),
+    };
+  }
+  if (variants && Array.isArray(variants)) {
+    productData.variants = {
+      create: variants.map((v: any) => ({ label: v.name, stock: 0 })),
+    };
+  }
+  if (colorOptions && Array.isArray(colorOptions)) {
+    productData.colorOptions = {
+      create: colorOptions.map((c: any) => ({ hex: c.hex, nameFA: c.name, sortOrder: 0 })),
+    };
+  }
+  
+  return prisma.product.create({ data: productData });
 }
 
 export async function updateProduct(id: string, data: any) {
@@ -304,6 +339,36 @@ export async function updateProduct(id: string, data: any) {
   if (data.stock !== undefined) updateData.stock = Number(data.stock);
   if (data.price !== undefined) updateData.price = Number(data.price);
   if (data.comparePrice !== undefined) updateData.comparePrice = Number(data.comparePrice);
+  if (data.tagsFA !== undefined) updateData.tagsFA = data.tagsFA;
+  if (data.tagsEN !== undefined) updateData.tagsEN = data.tagsEN;
+  
+  // Handle images - replace all
+  if (data.images !== undefined && Array.isArray(data.images)) {
+    updateData.images = {
+      deleteMany: {},
+      create: data.images.map((url: string, i: number) => ({ url, sortOrder: i })),
+    };
+    delete updateData.images;
+  }
+  
+  // Handle variants - replace all
+  if (data.variants !== undefined && Array.isArray(data.variants)) {
+    updateData.variants = {
+      deleteMany: {},
+      create: data.variants.map((v: any) => ({ label: v.name, stock: 0 })),
+    };
+    delete updateData.variants;
+  }
+  
+  // Handle colors - replace all
+  if (data.colorOptions !== undefined && Array.isArray(data.colorOptions)) {
+    updateData.colorOptions = {
+      deleteMany: {},
+      create: data.colorOptions.map((c: any) => ({ hex: c.hex, nameFA: c.name, sortOrder: 0 })),
+    };
+    delete updateData.colorOptions;
+  }
+  
   return prisma.product.update({ where: { id }, data: updateData });
 }
 
