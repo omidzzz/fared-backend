@@ -136,7 +136,7 @@ export async function getArticlesHandler(req: Request, res: Response, next: Next
   try {
     const { page, limit } = parsePagination(req.query as any);
     const { category, published } = req.query;
-    const result = await adminService.getArticles(page, limit, category as string | undefined, published === 'true');
+    const result = await adminService.getArticles(page, limit, category as string | undefined, published === undefined ? undefined : published === 'true');
     sendPaginated(res, result.articles, result.total, page, limit, "articles");
   } catch (e) { next(e); }
 }
