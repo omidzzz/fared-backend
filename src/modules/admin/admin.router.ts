@@ -8,6 +8,10 @@ import {
   getPendingForumHandler, approveTopicHandler, approveReplyHandler,
   getUsersHandler, createProductHandler, updateProductHandler, deleteProductHandler,
   scheduleSessionHandler,
+  getArticlesHandler, getArticleByIdHandler, createArticleHandler, updateArticleHandler, deleteArticleHandler,
+  getBooksHandler, getBookByIdHandler, createBookHandler, updateBookHandler, deleteBookHandler,
+  getPoemsHandler, getPoemByIdHandler, createPoemHandler, updatePoemHandler, deletePoemHandler,
+  getEducationalPostsHandler, getEducationalPostByIdHandler, createEducationalPostHandler, updateEducationalPostHandler, deleteEducationalPostHandler,
 } from "./admin.controller";
 
 const router = Router();
@@ -33,5 +37,30 @@ router.post("/products", createProductHandler);
 router.put("/products/:id", updateProductHandler);
 router.delete("/products/:id", deleteProductHandler);
 router.patch("/mentorship/sessions/:id/schedule", scheduleSessionHandler);
+
+// ── CMS ─────────────────────────────────────────────
+router.get("/articles", getArticlesHandler);
+router.get("/articles/:id", getArticleByIdHandler);
+router.post("/articles", createArticleHandler);
+router.put("/articles/:id", updateArticleHandler);
+router.delete("/articles/:id", deleteArticleHandler);
+
+router.get("/books", getBooksHandler);
+router.get("/books/:id", getBookByIdHandler);
+router.post("/books", createBookHandler);
+router.put("/books/:id", updateBookHandler);
+router.delete("/books/:id", deleteBookHandler);
+
+router.get("/poems", getPoemsHandler);
+router.get("/poems/:id", getPoemByIdHandler);
+router.post("/poems", createPoemHandler);
+router.put("/poems/:id", updatePoemHandler);
+router.delete("/poems/:id", deletePoemHandler);
+
+router.get("/educational", getEducationalPostsHandler);
+router.get("/educational/:id", getEducationalPostByIdHandler);
+router.post("/educational", createEducationalPostHandler);
+router.put("/educational/:id", updateEducationalPostHandler);
+router.delete("/educational/:id", deleteEducationalPostHandler);
 
 export default router;

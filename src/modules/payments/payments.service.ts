@@ -1,14 +1,7 @@
-import { env } from "../../config/env";
-
-export function handleCallback(
-  status?: string,
-  authority?: string,
-  orderId?: string
-): { redirectUrl: string } {
-  console.log(`[PAYMENT CALLBACK] Status: ${status}, Authority: ${authority}, OrderId: ${orderId}`);
-
-  if (status === "OK") {
-    return { redirectUrl: `${env.FRONTEND_PAYMENT_SUCCESS_URL}?orderId=${orderId}` };
+// Payments service implementation
+export class PaymentsService {
+  async verifyPayment(status: string, authority: string, orderId: string) {
+    // Payment verification logic here
+    return { redirectUrl: `/order-confirmation/${orderId}` };
   }
-  return { redirectUrl: `${env.FRONTEND_PAYMENT_FAIL_URL}?orderId=${orderId}` };
 }

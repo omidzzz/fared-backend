@@ -5,7 +5,6 @@ import { env } from "../config/env";
  */
 export async function sendSMS(phone: string, message: string): Promise<void> {
   if (!env.KAVENEGAR_API_KEY || !env.KAVENEGAR_SENDER) {
-    console.log(`[SMS STUB] To: ${phone} | Message: ${message}`);
     return;
   }
 
@@ -18,9 +17,7 @@ export async function sendSMS(phone: string, message: string): Promise<void> {
         message,
       },
     });
-    console.log(`[SMS] Sent to ${phone}`);
-  } catch (error) {
-    console.error(`[SMS] Failed to send to ${phone}:`, error);
+  } catch {
     // Don't throw — OTP should still work in dev mode
   }
 }

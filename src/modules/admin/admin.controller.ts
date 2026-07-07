@@ -129,3 +129,150 @@ export async function scheduleSessionHandler(req: Request, res: Response, next: 
     sendSuccess(res, session, 200, "Session scheduled");
   } catch (e) { next(e); }
 }
+
+// ── CMS ─────────────────────────────────────────────
+
+export async function getArticlesHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { page, limit } = parsePagination(req.query as any);
+    const { category, published } = req.query;
+    const result = await adminService.getArticles(page, limit, category as string | undefined, published === 'true');
+    sendPaginated(res, result.articles, result.total, page, limit);
+  } catch (e) { next(e); }
+}
+
+export async function getArticleByIdHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const article = await adminService.getArticleById(req.params.id as string);
+    sendSuccess(res, article);
+  } catch (e) { next(e); }
+}
+
+export async function createArticleHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const article = await adminService.createArticle(req.body);
+    sendSuccess(res, article, 201, "Article created");
+  } catch (e) { next(e); }
+}
+
+export async function updateArticleHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const article = await adminService.updateArticle(req.params.id as string, req.body);
+    sendSuccess(res, article, 200, "Article updated");
+  } catch (e) { next(e); }
+}
+
+export async function deleteArticleHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const article = await adminService.deleteArticle(req.params.id as string);
+    sendSuccess(res, article, 200, "Article deleted");
+  } catch (e) { next(e); }
+}
+
+export async function getBooksHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { page, limit } = parsePagination(req.query as any);
+    const result = await adminService.getBooks(page, limit);
+    sendPaginated(res, result.books, result.total, page, limit);
+  } catch (e) { next(e); }
+}
+
+export async function getBookByIdHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const book = await adminService.getBookById(req.params.id as string);
+    sendSuccess(res, book);
+  } catch (e) { next(e); }
+}
+
+export async function createBookHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const book = await adminService.createBook(req.body);
+    sendSuccess(res, book, 201, "Book created");
+  } catch (e) { next(e); }
+}
+
+export async function updateBookHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const book = await adminService.updateBook(req.params.id as string, req.body);
+    sendSuccess(res, book, 200, "Book updated");
+  } catch (e) { next(e); }
+}
+
+export async function deleteBookHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const book = await adminService.deleteBook(req.params.id as string);
+    sendSuccess(res, book, 200, "Book deleted");
+  } catch (e) { next(e); }
+}
+
+export async function getPoemsHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { page, limit } = parsePagination(req.query as any);
+    const result = await adminService.getPoems(page, limit);
+    sendPaginated(res, result.poems, result.total, page, limit);
+  } catch (e) { next(e); }
+}
+
+export async function getPoemByIdHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const poem = await adminService.getPoemById(req.params.id as string);
+    sendSuccess(res, poem);
+  } catch (e) { next(e); }
+}
+
+export async function createPoemHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const poem = await adminService.createPoem(req.body);
+    sendSuccess(res, poem, 201, "Poem created");
+  } catch (e) { next(e); }
+}
+
+export async function updatePoemHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const poem = await adminService.updatePoem(req.params.id as string, req.body);
+    sendSuccess(res, poem, 200, "Poem updated");
+  } catch (e) { next(e); }
+}
+
+export async function deletePoemHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const poem = await adminService.deletePoem(req.params.id as string);
+    sendSuccess(res, poem, 200, "Poem deleted");
+  } catch (e) { next(e); }
+}
+
+export async function getEducationalPostsHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { page, limit } = parsePagination(req.query as any);
+    const result = await adminService.getEducationalPosts(page, limit);
+    sendPaginated(res, result.posts, result.total, page, limit);
+  } catch (e) { next(e); }
+}
+
+export async function getEducationalPostByIdHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const post = await adminService.getEducationalPostById(req.params.id as string);
+    sendSuccess(res, post);
+  } catch (e) { next(e); }
+}
+
+export async function createEducationalPostHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const post = await adminService.createEducationalPost(req.body);
+    sendSuccess(res, post, 201, "Educational post created");
+  } catch (e) { next(e); }
+}
+
+export async function updateEducationalPostHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const post = await adminService.updateEducationalPost(req.params.id as string, req.body);
+    sendSuccess(res, post, 200, "Educational post updated");
+  } catch (e) { next(e); }
+}
+
+export async function deleteEducationalPostHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const post = await adminService.deleteEducationalPost(req.params.id as string);
+    sendSuccess(res, post, 200, "Educational post deleted");
+  } catch (e) { next(e); }
+}

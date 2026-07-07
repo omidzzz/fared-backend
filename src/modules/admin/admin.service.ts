@@ -319,3 +319,142 @@ export async function scheduleSession(sessionId: string, scheduledAt: string) {
 
   return session;
 }
+
+// ── CMS ─────────────────────────────────────────────
+
+export async function getArticles(page: number, limit: number, category?: string, published?: boolean) {
+  const where: any = {};
+  if (category) where.category = category;
+  if (published !== undefined) where.isPublished = published;
+
+  const [articles, total] = await Promise.all([
+    prisma.article.findMany({
+      where,
+      orderBy: { publishedAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.article.count({ where }),
+  ]);
+  return { articles, total };
+}
+
+export async function getArticleById(id: string) {
+  const article = await prisma.article.findUnique({ where: { id } });
+  if (!article) throw new AppError("Article not found", 404);
+  return article;
+}
+
+export async function createArticle(data: any) {
+  const { generateSlug } = await import("../../utils/slug");
+  return prisma.article.create({
+    data: { ...data, slug: data.slug || generateSlug(data.titleFA) },
+  });
+}
+
+export async function updateArticle(id: string, data: any) {
+  return prisma.article.update({ where: { id }, data });
+}
+
+export async function deleteArticle(id: string) {
+  return prisma.article.update({ where: { id }, data: { isActive: false } });
+}
+
+export async function getBooks(page: number, limit: number) {
+  const [books, total] = await Promise.all([
+    prisma.book.findMany({
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.book.count(),
+  ]);
+  return { books, total };
+}
+
+export async function getBookById(id: string) {
+  const book = await prisma.book.findUnique({ where: { id } });
+  if (!book) throw new AppError("Book not found", 404);
+  return book;
+}
+
+export async function createBook(data: any) {
+  const { generateSlug } = await import("../../utils/slug");
+  return prisma.book.create({
+    data: { ...data, slug: data.slug || generateSlug(data.titleFA) },
+  });
+}
+
+export async function updateBook(id: string, data: any) {
+  return prisma.book.update({ where: { id }, data });
+}
+
+export async function deleteBook(id: string) {
+  return prisma.book.update({ where: { id }, data: { isActive: false } });
+}
+
+export async function getPoems(page: number, limit: number) {
+  const [poems, total] = await Promise.all([
+    prisma.poem.findMany({
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.poem.count(),
+  ]);
+  return { poems, total };
+}
+
+export async function getPoemById(id: string) {
+  const poem = await prisma.poem.findUnique({ where: { id } });
+  if (!poem) throw new AppError("Poem not found", 404);
+  return poem;
+}
+
+export async function createPoem(data: any) {
+  const { generateSlug } = await import("../../utils/slug");
+  return prisma.poem.create({
+    data: { ...data, slug: data.slug || generateSlug(data.titleFA) },
+  });
+}
+
+export async function updatePoem(id: string, data: any) {
+  return prisma.poem.update({ where: { id }, data });
+}
+
+export async function deletePoem(id: string) {
+  return prisma.poem.update({ where: { id }, data: { isActive: false } });
+}
+
+export async function getEducationalPosts(page: number, limit: number) {
+  const [posts, total] = await Promise.all([
+    prisma.educationalPost.findMany({
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.educationalPost.count(),
+  ]);
+  return { posts, total };
+}
+
+export async function getEducationalPostById(id: string) {
+  const post = await prisma.educationalPost.findUnique({ where: { id } });
+  if (!post) throw new AppError("Educational post not found", 404);
+  return post;
+}
+
+export async function createEducationalPost(data: any) {
+  const { generateSlug } = await import("../../utils/slug");
+  return prisma.educationalPost.create({
+    data: { ...data, slug: data.slug || generateSlug(data.titleFA) },
+  });
+}
+
+export async function updateEducationalPost(id: string, data: any) {
+  return prisma.educationalPost.update({ where: { id }, data });
+}
+
+export async function deleteEducationalPost(id: string) {
+  return prisma.educationalPost.update({ where: { id }, data: { isActive: false } });
+}
