@@ -324,7 +324,7 @@ export async function scheduleSession(sessionId: string, scheduledAt: string) {
 
 export async function getArticles(page: number, limit: number, category?: string, published?: boolean) {
   const where: any = {};
-  if (category) where.category = category;
+  if (category) where.categoryFA = category;
   if (published !== undefined) where.isPublished = published;
 
   const [articles, total] = await Promise.all([
@@ -336,28 +336,101 @@ export async function getArticles(page: number, limit: number, category?: string
     }),
     prisma.article.count({ where }),
   ]);
-  return { articles, total };
+  
+  // Transform field names to match frontend expectations
+  return { 
+    articles: articles.map(a => ({
+      ...a,
+      title: a.titleFA,
+      category: a.categoryFA,
+      excerpt: a.excerptFA,
+      body: a.bodyFA,
+      author: a.authorFA,
+    })),
+    total 
+  };
 }
 
 export async function getArticleById(id: string) {
   const article = await prisma.article.findUnique({ where: { id } });
   if (!article) throw new AppError("Article not found", 404);
-  return article;
+  return {
+    ...article,
+    title: article.titleFA,
+    category: article.categoryFA,
+    excerpt: article.excerptFA,
+    body: article.bodyFA,
+    author: article.authorFA,
+  };
 }
 
 export async function createArticle(data: any) {
   const { generateSlug } = await import("../../utils/slug");
-  return prisma.article.create({
-    data: { ...data, slug: data.slug || generateSlug(data.titleFA) },
-  });
+  const articleData: any = {};
+  
+  // Map frontend field names to database field names
+  if (data.title) articleData.titleFA = data.title;
+  if (data.titleFA) articleData.titleFA = data.titleFA;
+  if (data.excerpt) articleData.excerptFA = data.excerpt;
+  if (data.excerptFA) articleData.excerptFA = data.excerptFA;
+  if (data.body) articleData.bodyFA = data.body;
+  if (data.bodyFA) articleData.bodyFA = data.bodyFA;
+  if (data.author) articleData.authorFA = data.author;
+  if (data.authorFA) articleData.authorFA = data.authorFA;
+  if (data.category) articleData.categoryFA = data.category;
+  if (data.categoryFA) articleData.categoryFA = data.categoryFA;
+  if (data.image !== undefined) articleData.image = data.image;
+  if (data.readMinutes !== undefined) articleData.readMinutes = data.readMinutes;
+  if (data.isFeatured !== undefined) articleData.isFeatured = data.isFeatured;
+  if (data.isPublished !== undefined) articleData.isPublished = data.isPublished;
+  if (data.publishedAt !== undefined) articleData.publishedAt = data.publishedAt;
+  
+  articleData.slug = data.slug || generateSlug(articleData.titleFA || data.titleFA);
+  
+  const article = await prisma.article.create({ data: articleData });
+  return {
+    ...article,
+    title: article.titleFA,
+    category: article.categoryFA,
+    excerpt: article.excerptFA,
+    body: article.bodyFA,
+    author: article.authorFA,
+  };
 }
 
 export async function updateArticle(id: string, data: any) {
-  return prisma.article.update({ where: { id }, data });
+  const articleData: any = {};
+  
+  // Map frontend field names to database field names
+  if (data.title !== undefined) articleData.titleFA = data.title;
+  if (data.titleFA !== undefined) articleData.titleFA = data.titleFA;
+  if (data.excerpt !== undefined) articleData.excerptFA = data.excerpt;
+  if (data.excerptFA !== undefined) articleData.excerptFA = data.excerptFA;
+  if (data.body !== undefined) articleData.bodyFA = data.body;
+  if (data.bodyFA !== undefined) articleData.bodyFA = data.bodyFA;
+  if (data.author !== undefined) articleData.authorFA = data.author;
+  if (data.authorFA !== undefined) articleData.authorFA = data.authorFA;
+  if (data.category !== undefined) articleData.categoryFA = data.category;
+  if (data.categoryFA !== undefined) articleData.categoryFA = data.categoryFA;
+  if (data.image !== undefined) articleData.image = data.image;
+  if (data.readMinutes !== undefined) articleData.readMinutes = data.readMinutes;
+  if (data.isFeatured !== undefined) articleData.isFeatured = data.isFeatured;
+  if (data.isPublished !== undefined) articleData.isPublished = data.isPublished;
+  if (data.publishedAt !== undefined) articleData.publishedAt = data.publishedAt;
+  
+  const article = await prisma.article.update({ where: { id }, data: articleData });
+  return {
+    ...article,
+    title: article.titleFA,
+    category: article.categoryFA,
+    excerpt: article.excerptFA,
+    body: article.bodyFA,
+    author: article.authorFA,
+  };
 }
 
 export async function deleteArticle(id: string) {
-  return prisma.article.update({ where: { id }, data: { isActive: false } });
+  return prisma.article.delete({ where: { id } });
 }
 
 export async function getBooks(page: number, limit: number) {
@@ -369,28 +442,99 @@ export async function getBooks(page: number, limit: number) {
     }),
     prisma.book.count(),
   ]);
-  return { books, total };
+  return { 
+    books: books.map(b => ({
+      ...b,
+      title: b.titleFA,
+      author: b.authorFA,
+      description: b.descriptionFA,
+      category: b.categoryFA,
+      image: b.coverImage,
+    })),
+    total 
+  };
 }
 
 export async function getBookById(id: string) {
   const book = await prisma.book.findUnique({ where: { id } });
   if (!book) throw new AppError("Book not found", 404);
-  return book;
+  return {
+    ...book,
+    title: book.titleFA,
+    author: book.authorFA,
+    description: book.descriptionFA,
+    category: book.categoryFA,
+    image: book.coverImage,
+  };
 }
 
 export async function createBook(data: any) {
   const { generateSlug } = await import("../../utils/slug");
-  return prisma.book.create({
-    data: { ...data, slug: data.slug || generateSlug(data.titleFA) },
-  });
+  const bookData: any = {};
+  
+  if (data.title) bookData.titleFA = data.title;
+  if (data.titleFA) bookData.titleFA = data.titleFA;
+  if (data.titleEN) bookData.titleEN = data.titleEN;
+  if (data.author) bookData.authorFA = data.author;
+  if (data.authorFA) bookData.authorFA = data.authorFA;
+  if (data.authorEN) bookData.authorEN = data.authorEN;
+  if (data.description) bookData.descriptionFA = data.description;
+  if (data.descriptionFA) bookData.descriptionFA = data.descriptionFA;
+  if (data.category) bookData.categoryFA = data.category;
+  if (data.categoryFA) bookData.categoryFA = data.categoryFA;
+  if (data.image) bookData.coverImage = data.image;
+  if (data.coverImage) bookData.coverImage = data.coverImage;
+  if (data.year !== undefined) bookData.year = data.year;
+  if (data.pages !== undefined) bookData.pages = data.pages;
+  if (data.rating !== undefined) bookData.rating = data.rating;
+  if (data.isPublished !== undefined) bookData.isPublished = data.isPublished;
+  
+  bookData.slug = data.slug || generateSlug(bookData.titleFA || data.titleFA);
+  
+  const book = await prisma.book.create({ data: bookData });
+  return {
+    ...book,
+    title: book.titleFA,
+    author: book.authorFA,
+    description: book.descriptionFA,
+    category: book.categoryFA,
+    image: book.coverImage,
+  };
 }
 
 export async function updateBook(id: string, data: any) {
-  return prisma.book.update({ where: { id }, data });
+  const bookData: any = {};
+  
+  if (data.title !== undefined) bookData.titleFA = data.title;
+  if (data.titleFA !== undefined) bookData.titleFA = data.titleFA;
+  if (data.titleEN !== undefined) bookData.titleEN = data.titleEN;
+  if (data.author !== undefined) bookData.authorFA = data.author;
+  if (data.authorFA !== undefined) bookData.authorFA = data.authorFA;
+  if (data.authorEN !== undefined) bookData.authorEN = data.authorEN;
+  if (data.description !== undefined) bookData.descriptionFA = data.description;
+  if (data.descriptionFA !== undefined) bookData.descriptionFA = data.descriptionFA;
+  if (data.category !== undefined) bookData.categoryFA = data.category;
+  if (data.categoryFA !== undefined) bookData.categoryFA = data.categoryFA;
+  if (data.image !== undefined) bookData.coverImage = data.image;
+  if (data.coverImage !== undefined) bookData.coverImage = data.coverImage;
+  if (data.year !== undefined) bookData.year = data.year;
+  if (data.pages !== undefined) bookData.pages = data.pages;
+  if (data.rating !== undefined) bookData.rating = data.rating;
+  if (data.isPublished !== undefined) bookData.isPublished = data.isPublished;
+  
+  const book = await prisma.book.update({ where: { id }, data: bookData });
+  return {
+    ...book,
+    title: book.titleFA,
+    author: book.authorFA,
+    description: book.descriptionFA,
+    category: book.categoryFA,
+    image: book.coverImage,
+  };
 }
 
 export async function deleteBook(id: string) {
-  return prisma.book.update({ where: { id }, data: { isActive: false } });
+  return prisma.book.delete({ where: { id } });
 }
 
 export async function getPoems(page: number, limit: number) {
@@ -402,28 +546,81 @@ export async function getPoems(page: number, limit: number) {
     }),
     prisma.poem.count(),
   ]);
-  return { poems, total };
+  return { 
+    poems: poems.map(p => ({
+      ...p,
+      title: p.titleFA,
+      poet: p.poetFA,
+      lines: p.linesFA,
+    })),
+    total 
+  };
 }
 
 export async function getPoemById(id: string) {
   const poem = await prisma.poem.findUnique({ where: { id } });
   if (!poem) throw new AppError("Poem not found", 404);
-  return poem;
+  return {
+    ...poem,
+    title: poem.titleFA,
+    poet: poem.poetFA,
+    lines: poem.linesFA,
+  };
 }
 
 export async function createPoem(data: any) {
   const { generateSlug } = await import("../../utils/slug");
-  return prisma.poem.create({
-    data: { ...data, slug: data.slug || generateSlug(data.titleFA) },
-  });
+  const poemData: any = {};
+  
+  if (data.title) poemData.titleFA = data.title;
+  if (data.titleFA) poemData.titleFA = data.titleFA;
+  if (data.poet) poemData.poetFA = data.poet;
+  if (data.poetFA) poemData.poetFA = data.poetFA;
+  if (data.poetEN) poemData.poetEN = data.poetEN;
+  if (data.era) poemData.era = data.era;
+  if (data.lines) poemData.linesFA = data.lines;
+  if (data.linesFA) poemData.linesFA = data.linesFA;
+  if (data.theme) poemData.theme = data.theme;
+  if (data.backgroundGradient) poemData.backgroundGradient = data.backgroundGradient;
+  if (data.isPublished !== undefined) poemData.isPublished = data.isPublished;
+  
+  poemData.slug = data.slug || generateSlug(poemData.titleFA || data.titleFA);
+  
+  const poem = await prisma.poem.create({ data: poemData });
+  return {
+    ...poem,
+    title: poem.titleFA,
+    poet: poem.poetFA,
+    lines: poem.linesFA,
+  };
 }
 
 export async function updatePoem(id: string, data: any) {
-  return prisma.poem.update({ where: { id }, data });
+  const poemData: any = {};
+  
+  if (data.title !== undefined) poemData.titleFA = data.title;
+  if (data.titleFA !== undefined) poemData.titleFA = data.titleFA;
+  if (data.poet !== undefined) poemData.poetFA = data.poet;
+  if (data.poetFA !== undefined) poemData.poetFA = data.poetFA;
+  if (data.poetEN !== undefined) poemData.poetEN = data.poetEN;
+  if (data.era !== undefined) poemData.era = data.era;
+  if (data.lines !== undefined) poemData.linesFA = data.lines;
+  if (data.linesFA !== undefined) poemData.linesFA = data.linesFA;
+  if (data.theme !== undefined) poemData.theme = data.theme;
+  if (data.backgroundGradient !== undefined) poemData.backgroundGradient = data.backgroundGradient;
+  if (data.isPublished !== undefined) poemData.isPublished = data.isPublished;
+  
+  const poem = await prisma.poem.update({ where: { id }, data: poemData });
+  return {
+    ...poem,
+    title: poem.titleFA,
+    poet: poem.poetFA,
+    lines: poem.linesFA,
+  };
 }
 
 export async function deletePoem(id: string) {
-  return prisma.poem.update({ where: { id }, data: { isActive: false } });
+  return prisma.poem.delete({ where: { id } });
 }
 
 export async function getEducationalPosts(page: number, limit: number) {
@@ -435,26 +632,104 @@ export async function getEducationalPosts(page: number, limit: number) {
     }),
     prisma.educationalPost.count(),
   ]);
-  return { posts, total };
+  return { 
+    posts: posts.map(p => ({
+      ...p,
+      title: p.titleFA,
+      category: p.categoryFA,
+      body: p.bodyFA,
+      excerpt: p.excerptFA,
+      tags: p.tagsFA,
+    })),
+    total 
+  };
 }
 
 export async function getEducationalPostById(id: string) {
   const post = await prisma.educationalPost.findUnique({ where: { id } });
   if (!post) throw new AppError("Educational post not found", 404);
-  return post;
+  return {
+    ...post,
+    title: post.titleFA,
+    category: post.categoryFA,
+    body: post.bodyFA,
+    excerpt: post.excerptFA,
+    tags: post.tagsFA,
+  };
 }
 
 export async function createEducationalPost(data: any) {
   const { generateSlug } = await import("../../utils/slug");
-  return prisma.educationalPost.create({
-    data: { ...data, slug: data.slug || generateSlug(data.titleFA) },
-  });
+  const postData: any = {};
+  
+  if (data.title) postData.titleFA = data.title;
+  if (data.titleFA) postData.titleFA = data.titleFA;
+  if (data.titleEN) postData.titleEN = data.titleEN;
+  if (data.category) postData.categoryFA = data.category;
+  if (data.categoryFA) postData.categoryFA = data.categoryFA;
+  if (data.categoryEN) postData.categoryEN = data.categoryEN;
+  if (data.body) postData.bodyFA = data.body;
+  if (data.bodyFA) postData.bodyFA = data.bodyFA;
+  if (data.bodyEN) postData.bodyEN = data.bodyEN;
+  if (data.excerpt) postData.excerptFA = data.excerpt;
+  if (data.excerptFA) postData.excerptFA = data.excerptFA;
+  if (data.tags) postData.tagsFA = data.tags;
+  if (data.tagsFA) postData.tagsFA = data.tagsFA;
+  if (data.readMinutes !== undefined) postData.readMinutes = data.readMinutes;
+  if (data.isPublished !== undefined) postData.isPublished = data.isPublished;
+  if (data.publishedAt !== undefined) postData.publishedAt = data.publishedAt;
+  if (data.authorId) postData.authorId = data.authorId;
+  
+  postData.slug = data.slug || generateSlug(postData.titleFA || data.titleFA);
+  
+  // If authorId is not provided, use a default admin
+  if (!postData.authorId) {
+    const admin = await prisma.user.findFirst({ where: { role: "ADMIN" } });
+    postData.authorId = admin?.id || '';
+  }
+  
+  const post = await prisma.educationalPost.create({ data: postData });
+  return {
+    ...post,
+    title: post.titleFA,
+    category: post.categoryFA,
+    body: post.bodyFA,
+    excerpt: post.excerptFA,
+    tags: post.tagsFA,
+  };
 }
 
 export async function updateEducationalPost(id: string, data: any) {
-  return prisma.educationalPost.update({ where: { id }, data });
+  const postData: any = {};
+  
+  if (data.title !== undefined) postData.titleFA = data.title;
+  if (data.titleFA !== undefined) postData.titleFA = data.titleFA;
+  if (data.titleEN !== undefined) postData.titleEN = data.titleEN;
+  if (data.category !== undefined) postData.categoryFA = data.category;
+  if (data.categoryFA !== undefined) postData.categoryFA = data.categoryFA;
+  if (data.categoryEN !== undefined) postData.categoryEN = data.categoryEN;
+  if (data.body !== undefined) postData.bodyFA = data.body;
+  if (data.bodyFA !== undefined) postData.bodyFA = data.bodyFA;
+  if (data.bodyEN !== undefined) postData.bodyEN = data.bodyEN;
+  if (data.excerpt !== undefined) postData.excerptFA = data.excerpt;
+  if (data.excerptFA !== undefined) postData.excerptFA = data.excerptFA;
+  if (data.tags !== undefined) postData.tagsFA = data.tags;
+  if (data.tagsFA !== undefined) postData.tagsFA = data.tagsFA;
+  if (data.readMinutes !== undefined) postData.readMinutes = data.readMinutes;
+  if (data.isPublished !== undefined) postData.isPublished = data.isPublished;
+  if (data.publishedAt !== undefined) postData.publishedAt = data.publishedAt;
+  
+  const post = await prisma.educationalPost.update({ where: { id }, data: postData });
+  return {
+    ...post,
+    title: post.titleFA,
+    category: post.categoryFA,
+    body: post.bodyFA,
+    excerpt: post.excerptFA,
+    tags: post.tagsFA,
+  };
 }
 
 export async function deleteEducationalPost(id: string) {
-  return prisma.educationalPost.update({ where: { id }, data: { isActive: false } });
+  return prisma.educationalPost.delete({ where: { id } });
 }
