@@ -329,3 +329,81 @@ export async function deleteEducationalPostHandler(req: Request, res: Response, 
     sendSuccess(res, { post }, 200, "Educational post deleted");
   } catch (e) { next(e); }
 }
+
+// ── Courses (admin) ──────────────────────────────
+
+export async function getAdminCoursesHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { page, limit } = parsePagination(req.query as any);
+    const { search } = req.query;
+    const result = await adminService.getAdminCourses(page, limit, search as string | undefined);
+    sendPaginated(res, result.courses, result.total, page, limit, "courses");
+  } catch (e) { next(e); }
+}
+
+export async function getAdminCourseByIdHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const course = await adminService.getAdminCourseById(req.params.id as string);
+    sendSuccess(res, { course });
+  } catch (e) { next(e); }
+}
+
+export async function createCourseHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const course = await adminService.createCourse(req.body);
+    sendSuccess(res, { course }, 201, "Course created");
+  } catch (e) { next(e); }
+}
+
+export async function updateCourseHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const course = await adminService.updateCourse(req.params.id as string, req.body);
+    sendSuccess(res, { course }, 200, "Course updated");
+  } catch (e) { next(e); }
+}
+
+export async function deleteCourseHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const course = await adminService.deleteCourse(req.params.id as string);
+    sendSuccess(res, { course }, 200, "Course deleted");
+  } catch (e) { next(e); }
+}
+
+// ── Tours (admin) ────────────────────────────────
+
+export async function getAdminToursHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { page, limit } = parsePagination(req.query as any);
+    const { search } = req.query;
+    const result = await adminService.getAdminTours(page, limit, search as string | undefined);
+    sendPaginated(res, result.tours, result.total, page, limit, "tours");
+  } catch (e) { next(e); }
+}
+
+export async function getAdminTourByIdHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const tour = await adminService.getAdminTourById(req.params.id as string);
+    sendSuccess(res, { tour });
+  } catch (e) { next(e); }
+}
+
+export async function createTourHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const tour = await adminService.createTour(req.body);
+    sendSuccess(res, { tour }, 201, "Tour created");
+  } catch (e) { next(e); }
+}
+
+export async function updateTourHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const tour = await adminService.updateTour(req.params.id as string, req.body);
+    sendSuccess(res, { tour }, 200, "Tour updated");
+  } catch (e) { next(e); }
+}
+
+export async function deleteTourHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const tour = await adminService.deleteTour(req.params.id as string);
+    sendSuccess(res, { tour }, 200, "Tour deleted");
+  } catch (e) { next(e); }
+}

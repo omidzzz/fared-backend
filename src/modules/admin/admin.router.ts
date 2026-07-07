@@ -15,6 +15,8 @@ import {
   getBooksHandler, getBookByIdHandler, createBookHandler, updateBookHandler, deleteBookHandler,
   getPoemsHandler, getPoemByIdHandler, createPoemHandler, updatePoemHandler, deletePoemHandler,
   getEducationalPostsHandler, getEducationalPostByIdHandler, createEducationalPostHandler, updateEducationalPostHandler, deleteEducationalPostHandler,
+  getAdminCoursesHandler, getAdminCourseByIdHandler, createCourseHandler, updateCourseHandler, deleteCourseHandler,
+  getAdminToursHandler, getAdminTourByIdHandler, createTourHandler, updateTourHandler, deleteTourHandler,
 } from "./admin.controller";
 
 const router = Router();
@@ -71,5 +73,19 @@ router.get("/educational/:id", getEducationalPostByIdHandler);
 router.post("/educational", createEducationalPostHandler);
 router.put("/educational/:id", updateEducationalPostHandler);
 router.delete("/educational/:id", deleteEducationalPostHandler);
+
+// ── Courses (admin) ──────────────────────────────
+router.get("/courses", getAdminCoursesHandler);
+router.get("/courses/:id", getAdminCourseByIdHandler);
+router.post("/courses", createCourseHandler);
+router.put("/courses/:id", updateCourseHandler);
+router.delete("/courses/:id", deleteCourseHandler);
+
+// ── Tours (admin) ────────────────────────────────
+router.get("/tours", getAdminToursHandler);
+router.get("/tours/:id", getAdminTourByIdHandler);
+router.post("/tours", createTourHandler);
+router.put("/tours/:id", updateTourHandler);
+router.delete("/tours/:id", deleteTourHandler);
 
 export default router;

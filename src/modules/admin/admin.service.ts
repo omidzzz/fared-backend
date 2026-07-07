@@ -329,10 +329,24 @@ export async function getProducts(page: number, limit: number, search?: string, 
   if (featured !== undefined) where.isFeatured = featured;
 
   const [products, total] = await Promise.all([
-    prisma.product.findMany({ where, orderBy: { createdAt: "desc" }, skip: (page - 1) * limit, take: limit }),
+    prisma.product.findMany({
+      where,
+      include: { category: true },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
     prisma.product.count({ where }),
   ]);
-  return { products, total };
+
+  // Normalize fields for the admin frontend (nameFA, category as slug string)
+  const normalized = products.map((p) => ({
+    ...p,
+    nameFa: p.nameFA,
+    category: p.category?.slug ?? null,
+  }));
+
+  return { products: normalized, total };
 }
 
 export async function getProductById(id: string) {
@@ -787,4 +801,245 @@ export async function updateEducationalPost(id: string, data: any) {
 
 export async function deleteEducationalPost(id: string) {
   return prisma.educationalPost.delete({ where: { id } });
+}
+
+// ── Courses (admin) ──────────────────────────────
+
+export async function getAdminCourses(page: number, limit: number, search?: string) {
+  const where: any = {};
+  if (search) where.OR = [{ nameFA: { contains: search } }, { nameEN: { contains: search } }];
+
+  const [courses, total] = await Promise.all([
+    prisma.course.findMany({
+      where,
+      include: { category: true, instructor: { select: { id: true, nameFA: true } } },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.course.count({ where }),
+  ]);
+
+  const normalized = courses.map((c) => ({
+    ...c,
+    titleFa: c.nameFA,
+    titleEn: c.nameEN,
+    instructor: c.instructor?.nameFA ?? null,
+    image: c.heroImage ?? null,
+    active: c.isActive,
+  }));
+
+  return { courses: normalized, total };
+}
+
+export async function getAdminCourseById(id: string) {
+  const course = await prisma.course.findUnique({
+    where: { id },
+    include: { category: true, instructor: { select: { id: true, nameFA: true } } },
+  });
+  if (!course) throw new AppError("Course not found", 404);
+  return {
+    ...course,
+    titleFa: course.nameFA,
+    titleEn: course.nameEN,
+    instructor: course.instructor?.nameFA ?? null,
+    image: course.heroImage ?? null,
+    active: course.isActive,
+  };
+}
+
+export async function createCourse(data: any) {
+  const { generateSlug } = await import("../../utils/slug");
+  const courseData: any = {
+    nameFA: data.titleFa || data.nameFA,
+    nameEN: data.titleEn || data.nameEN || null,
+    descriptionFA: data.descriptionFa || data.descriptionFA || "",
+    descriptionEN: data.descriptionEn || data.descriptionEN || null,
+    price: Number(data.price) || 0,
+    duration: data.duration || `${data.durationHours || 0} hours`,
+    durationWeeks: Number(data.durationWeeks) || 0,
+    lessons: Number(data.lessons) || 0,
+    certificate: Boolean(data.certificate),
+    isActive: data.active !== undefined ? Boolean(data.active) : true,
+    isFeatured: Boolean(data.featured),
+    heroImage: data.image || data.heroImage || null,
+    categoryId: data.categoryId || (await getDefaultCategoryId()),
+    instructorId: data.instructorId || (await getDefaultInstructorId()),
+  };
+  courseData.slug = data.slug || generateSlug(courseData.nameFA);
+
+  const course = await prisma.course.create({ data: courseData });
+  return {
+    ...course,
+    titleFa: course.nameFA,
+    titleEn: course.nameEN,
+    instructor: null,
+    image: course.heroImage ?? null,
+    active: course.isActive,
+  };
+}
+
+export async function updateCourse(id: string, data: any) {
+  const courseData: any = {};
+  if (data.titleFa !== undefined) courseData.nameFA = data.titleFa;
+  if (data.nameFA !== undefined) courseData.nameFA = data.nameFA;
+  if (data.titleEn !== undefined) courseData.nameEN = data.titleEn;
+  if (data.nameEN !== undefined) courseData.nameEN = data.nameEN;
+  if (data.descriptionFa !== undefined) courseData.descriptionFA = data.descriptionFa;
+  if (data.descriptionFA !== undefined) courseData.descriptionFA = data.descriptionFA;
+  if (data.descriptionEn !== undefined) courseData.descriptionEN = data.descriptionEn;
+  if (data.descriptionEN !== undefined) courseData.descriptionEN = data.descriptionEN;
+  if (data.price !== undefined) courseData.price = Number(data.price);
+  if (data.duration !== undefined) courseData.duration = data.duration;
+  if (data.durationWeeks !== undefined) courseData.durationWeeks = Number(data.durationWeeks);
+  if (data.lessons !== undefined) courseData.lessons = Number(data.lessons);
+  if (data.certificate !== undefined) courseData.certificate = Boolean(data.certificate);
+  if (data.active !== undefined) courseData.isActive = Boolean(data.active);
+  if (data.featured !== undefined) courseData.isFeatured = Boolean(data.featured);
+  if (data.image !== undefined) courseData.heroImage = data.image;
+  if (data.heroImage !== undefined) courseData.heroImage = data.heroImage;
+  if (data.categoryId !== undefined) courseData.categoryId = data.categoryId;
+  if (data.instructorId !== undefined) courseData.instructorId = data.instructorId;
+
+  const course = await prisma.course.update({ where: { id }, data: courseData });
+  return {
+    ...course,
+    titleFa: course.nameFA,
+    titleEn: course.nameEN,
+    instructor: null,
+    image: course.heroImage ?? null,
+    active: course.isActive,
+  };
+}
+
+export async function deleteCourse(id: string) {
+  return prisma.course.delete({ where: { id } });
+}
+
+// ── Tours (admin) ────────────────────────────────
+
+export async function getAdminTours(page: number, limit: number, search?: string) {
+  const where: any = {};
+  if (search) where.OR = [{ titleFA: { contains: search } }, { titleEN: { contains: search } }];
+
+  const [tours, total] = await Promise.all([
+    prisma.tour.findMany({
+      where,
+      include: { category: true, images: { orderBy: { sortOrder: "asc" }, take: 1 } },
+      orderBy: { startDate: "asc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.tour.count({ where }),
+  ]);
+
+  const normalized = tours.map((t) => ({
+    ...t,
+    image: t.images?.[0]?.url ?? t.heroImage ?? null,
+    active: t.isActive,
+    maxCapacity: t.spotsTotal,
+  }));
+
+  return { tours: normalized, total };
+}
+
+export async function getAdminTourById(id: string) {
+  const tour = await prisma.tour.findUnique({
+    where: { id },
+    include: { category: true, images: { orderBy: { sortOrder: "asc" }, take: 1 } },
+  });
+  if (!tour) throw new AppError("Tour not found", 404);
+  return {
+    ...tour,
+    image: tour.images?.[0]?.url ?? tour.heroImage ?? null,
+    active: tour.isActive,
+    maxCapacity: tour.spotsTotal,
+  };
+}
+
+export async function createTour(data: any) {
+  const { generateSlug } = await import("../../utils/slug");
+  const tourData: any = {
+    titleFA: data.titleFa || data.nameFA,
+    titleEN: data.titleEn || data.nameEN || null,
+    descriptionFA: data.descriptionFa || data.descriptionFA || "",
+    descriptionEN: data.descriptionEn || data.descriptionEN || null,
+    price: Number(data.price) || 0,
+    destination: data.destination || data.location || "Unknown",
+    dateRange: data.dateRange || "",
+    startDate: data.startDate ? new Date(data.startDate) : new Date(),
+    endDate: data.endDate ? new Date(data.endDate) : new Date(),
+    durationDays: Number(data.durationDays) || 0,
+    spotsTotal: Number(data.maxCapacity) || 0,
+    spotsLeft: Number(data.maxCapacity) || 0,
+    instructor: data.instructor || "",
+    isActive: data.active !== undefined ? Boolean(data.active) : true,
+    isFeatured: Boolean(data.featured),
+    heroImage: data.image || data.heroImage || null,
+    categoryId: data.categoryId || (await getDefaultCategoryId()),
+  };
+  tourData.slug = data.slug || generateSlug(tourData.titleFA);
+
+  const tour = await prisma.tour.create({ data: tourData });
+  return {
+    ...tour,
+    image: tour.heroImage ?? null,
+    active: tour.isActive,
+    maxCapacity: tour.spotsTotal,
+  };
+}
+
+export async function updateTour(id: string, data: any) {
+  const tourData: any = {};
+  if (data.titleFa !== undefined) tourData.titleFA = data.titleFa;
+  if (data.nameFA !== undefined) tourData.titleFA = data.nameFA;
+  if (data.titleEn !== undefined) tourData.titleEN = data.titleEn;
+  if (data.nameEN !== undefined) tourData.titleEN = data.nameEN;
+  if (data.descriptionFa !== undefined) tourData.descriptionFA = data.descriptionFa;
+  if (data.descriptionFA !== undefined) tourData.descriptionFA = data.descriptionFA;
+  if (data.descriptionEn !== undefined) tourData.descriptionEN = data.descriptionEn;
+  if (data.descriptionEN !== undefined) tourData.descriptionEN = data.descriptionEN;
+  if (data.price !== undefined) tourData.price = Number(data.price);
+  if (data.destination !== undefined) tourData.destination = data.destination;
+  if (data.location !== undefined) tourData.destination = data.location;
+  if (data.dateRange !== undefined) tourData.dateRange = data.dateRange;
+  if (data.startDate !== undefined) tourData.startDate = new Date(data.startDate);
+  if (data.endDate !== undefined) tourData.endDate = new Date(data.endDate);
+  if (data.durationDays !== undefined) tourData.durationDays = Number(data.durationDays);
+  if (data.maxCapacity !== undefined) {
+    tourData.spotsTotal = Number(data.maxCapacity);
+    tourData.spotsLeft = Number(data.maxCapacity);
+  }
+  if (data.instructor !== undefined) tourData.instructor = data.instructor;
+  if (data.active !== undefined) tourData.isActive = Boolean(data.active);
+  if (data.featured !== undefined) tourData.isFeatured = Boolean(data.featured);
+  if (data.image !== undefined) tourData.heroImage = data.image;
+  if (data.heroImage !== undefined) tourData.heroImage = data.heroImage;
+  if (data.categoryId !== undefined) tourData.categoryId = data.categoryId;
+
+  const tour = await prisma.tour.update({ where: { id }, data: tourData });
+  return {
+    ...tour,
+    image: tour.heroImage ?? null,
+    active: tour.isActive,
+    maxCapacity: tour.spotsTotal,
+  };
+}
+
+export async function deleteTour(id: string) {
+  return prisma.tour.delete({ where: { id } });
+}
+
+// ── Helpers ──────────────────────────────────────
+
+async function getDefaultCategoryId(): Promise<string> {
+  const cat = await prisma.category.findFirst();
+  return cat?.id || "";
+}
+
+async function getDefaultInstructorId(): Promise<string> {
+  const instructor = await prisma.user.findFirst({
+    where: { role: { in: ["INSTRUCTOR", "ADMIN", "SUPER_ADMIN"] } },
+  });
+  return instructor?.id || "";
 }
