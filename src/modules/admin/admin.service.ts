@@ -292,7 +292,19 @@ export async function createProduct(data: any) {
 }
 
 export async function updateProduct(id: string, data: any) {
-  return prisma.product.update({ where: { id }, data });
+  const updateData: any = { ...data };
+  if (data.nameFa !== undefined) { updateData.nameFA = data.nameFa; delete updateData.nameFa; }
+  if (data.nameEn !== undefined) { updateData.nameEN = data.nameEn; delete updateData.nameEn; }
+  if (data.descriptionFa !== undefined) { updateData.descriptionFA = data.descriptionFa; delete updateData.descriptionFa; }
+  if (data.descriptionEn !== undefined) { updateData.descriptionEN = data.descriptionEn; delete updateData.descriptionEn; }
+  if (data.featured !== undefined) { updateData.isFeatured = Boolean(data.featured); delete updateData.featured; }
+  if (data.isBestSeller !== undefined) { updateData.isBestSeller = Boolean(data.isBestSeller); delete updateData.isBestSeller; }
+  if (data.active !== undefined) { updateData.isActive = Boolean(data.active); delete updateData.active; }
+  if (data.category !== undefined) { updateData.category = { connect: { slug: data.category } }; delete updateData.category; }
+  if (data.stock !== undefined) updateData.stock = Number(data.stock);
+  if (data.price !== undefined) updateData.price = Number(data.price);
+  if (data.comparePrice !== undefined) updateData.comparePrice = Number(data.comparePrice);
+  return prisma.product.update({ where: { id }, data: updateData });
 }
 
 export async function deactivateProduct(id: string) {
