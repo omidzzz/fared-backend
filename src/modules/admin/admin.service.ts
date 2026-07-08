@@ -282,7 +282,41 @@ export async function getUsers(page: number, limit: number) {
   return { users, total };
 }
 
-// ── Products ─────────────────────────────────────
+<arg_key>task</arg_key>
+<arg_value>// ── Products (list) ──────────────────────────────
+
+export async function getProducts(page: number, limit: number, search?: string, category?: string, featured?: boolean) {
+  const where: any = {};
+  if (search) where.OR = [{ nameFA: { contains: search } }, { nameEN: { contains: search } }];
+  if (category) where.category = { slug: category };
+  if (featured !== undefined) where.isFeatured = featured;
+
+  const [products, total] = await Promise.all([
+    prisma.product.findMany({
+      where,
+      include: { category: true },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.product.count({ where }),
+  ]);
+
+  // Normalize fields for the admin frontend (nameFA, category as slug string)
+  const normalized = products.map((p) => ({
+    ...p,
+    nameFa: p.nameFA,
+    nameEn: p.nameEN,
+    category: p.category?.slug ?? null,
+    featured: p.isFeatured,
+    isBestSeller: p.isBestSeller,
+    active: p.isActive,
+  }));
+
+  return { products: normalized, total };
+}
+
+// ── Products (create/update) ───────────────────────
 
 export async function createProduct(data: any) {
   const { generateSlug } = await import("../../utils/slug");
@@ -391,41 +425,11 @@ export async function scheduleSession(sessionId: string, scheduledAt: string) {
     },
   });
 
-  return session;
+<arg_key>task</arg_key>
+<arg_value>return session;
 }
 
-// ── Products (list) ──────────────────────────────
-
-export async function getProducts(page: number, limit: number, search?: string, category?: string, featured?: boolean) {
-  const where: any = { isActive: true };
-  if (search) where.OR = [{ nameFA: { contains: search } }, { nameEN: { contains: search } }];
-  if (category) where.category = { slug: category };
-  if (featured !== undefined) where.isFeatured = featured;
-
-  const [products, total] = await Promise.all([
-    prisma.product.findMany({
-      where,
-      include: { category: true },
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * limit,
-      take: limit,
-    }),
-    prisma.product.count({ where }),
-  ]);
-
-  // Normalize fields for the admin frontend (nameFA, category as slug string)
-  const normalized = products.map((p) => ({
-    ...p,
-    nameFa: p.nameFA,
-    nameEn: p.nameEN,
-    category: p.category?.slug ?? null,
-    featured: p.isFeatured,
-    isBestSeller: p.isBestSeller,
-    active: p.isActive,
-  }));
-
-  return { products: normalized, total };
-}
+// ── Product (single) ──────────────────────────────
 
 export async function getProductById(id: string) {
   const product = await prisma.product.findUnique({ where: { id }, include: { images: true, attributes: true, variants: true, colorOptions: true, category: true } });

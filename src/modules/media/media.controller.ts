@@ -9,8 +9,9 @@ export async function uploadMediaHandler(
   next: NextFunction
 ): Promise<void> {
   try {
-    const { folder } = uploadMediaSchema.parse(req.body);
-    const mediaFile = await mediaService.uploadMedia(req.user!.id, req.file!, folder!);
+    // Get folder from query params (since body is used by multer for file)
+    const folder = (req.query.folder as string) || "products";
+    const mediaFile = await mediaService.uploadMedia(req.user!.id, req.file!, folder);
     sendSuccess(
       res,
       { url: mediaFile.url, key: mediaFile.key },

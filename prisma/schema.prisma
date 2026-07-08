@@ -258,6 +258,7 @@ model ProductColor {
   id        String  @id @default(cuid())
   hex       String  // e.g. "#8B2635"
   nameFA    String?
+  sortOrder Int     @default(0)
   productId String
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
