@@ -23,6 +23,8 @@ function formatProduct(product: any) {
     attributes: groupAttributes(product),
     variants: product.variants || [],
     colorOptions: product.colorOptions || [],
+    isFeatured: product.isFeatured ?? false,
+    isBestSeller: product.isBestSeller ?? false,
   };
 }
 

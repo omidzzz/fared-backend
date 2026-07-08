@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from "../src/config/database";
 
-const prisma = new PrismaClient();
+const prismaClient = prisma;
 
 async function main() {
   console.log("Starting to mark products as featured...\n");
@@ -70,5 +70,5 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await prismaClient.$disconnect();
   });

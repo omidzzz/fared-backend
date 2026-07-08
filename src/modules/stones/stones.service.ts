@@ -19,6 +19,8 @@ function formatProduct(product: any) {
       sortOrder: img.sortOrder || 0,
     })),
     attributes: groupAttributes(product),
+    isFeatured: product.isFeatured ?? false,
+    isBestSeller: product.isBestSeller ?? false,
   };
 }
 
