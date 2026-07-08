@@ -1,53 +1,50 @@
-import { S3Client } from "@aws-sdk/client-s3";
+import path from "path";
+import fs from "fs/promises";
 import { env } from "./env";
 
-export const s3Client = new S3Client({
-  endpoint: env.STORAGE_ENDPOINT,
-  region: env.STORAGE_REGION,
-  credentials: {
-    accessKeyId: env.STORAGE_ACCESS_KEY || "",
-    secretAccessKey: env.STORAGE_SECRET_KEY || "",
-  },
-  forcePathStyle: true, // Required for Liara compatibility
-});
-
-export const BUCKET_NAME = env.STORAGE_BUCKET;
+const UPLOADS_DIR = path.resolve(process.cwd(), "uploads");
 
 /**
- * Upload a file buffer to Object Storage.
- * Returns the public URL.
+ * Ensure the uploads directory exists.
+ */
+async function ensureUploadsDir(): Promise<void> {
+  try {
+    await fs.mkdir(UPLOADS_DIR, { recursive: true });
+  } catch {
+    // directory already exists
+  }
+}
+
+/**
+ * Upload a file buffer to local disk.
+ * Returns the public URL accessible via the backend.
  */
 export async function uploadToStorage(
   key: string,
   buffer: Buffer,
-  mimeType: string
+  _mimeType: string
 ): Promise<string> {
   console.log("[storage] uploadToStorage starting", {
     key,
     bufferSize: buffer?.length,
-    mimeType,
-    endpoint: env.STORAGE_ENDPOINT,
-    bucket: env.STORAGE_BUCKET,
-    region: env.STORAGE_REGION,
-    hasAccessKey: !!env.STORAGE_ACCESS_KEY,
-    hasSecretKey: !!env.STORAGE_SECRET_KEY,
+    uploadsDir: UPLOADS_DIR,
   });
 
+  await ensureUploadsDir();
+
+  const filePath = path.join(UPLOADS_DIR, key);
+  const dir = path.dirname(filePath);
+
   try {
-    const { PutObjectCommand } = await import("@aws-sdk/client-s3");
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(filePath, buffer);
 
-    await s3Client.send(
-      new PutObjectCommand({
-        Bucket: BUCKET_NAME,
-        Key: key,
-        Body: buffer,
-        ContentType: mimeType,
-      })
-    );
+    // Build the public URL — accessible via backend's /uploads/ path
+    const publicPath = key.replace(/\\/g, "/");
+    const baseUrl = env.BACKEND_URL || `http://localhost:${env.PORT}`;
+    const url = `${baseUrl}/uploads/${publicPath}`;
 
-    const url = `${env.STORAGE_ENDPOINT}/${BUCKET_NAME}/${key}`;
-    console.log("[storage] uploadToStorage success", { url });
-    // Liara Object Storage URL format
+    console.log("[storage] uploadToStorage success", { url, filePath });
     return url;
   } catch (err) {
     console.error("[storage] uploadToStorage error:", err);
@@ -56,15 +53,16 @@ export async function uploadToStorage(
 }
 
 /**
- * Delete a file from Object Storage.
+ * Delete a file from local disk.
  */
 export async function deleteFromStorage(key: string): Promise<void> {
-  const { DeleteObjectCommand } = await import("@aws-sdk/client-s3");
+  const filePath = path.join(UPLOADS_DIR, key);
+  console.log("[storage] deleteFromStorage", { key, filePath });
 
-  await s3Client.send(
-    new DeleteObjectCommand({
-      Bucket: BUCKET_NAME,
-      Key: key,
-    })
-  );
+  try {
+    await fs.unlink(filePath);
+  } catch (err) {
+    // File might already be deleted
+    console.warn("[storage] deleteFromStorage warning:", err);
+  }
 }

@@ -24,6 +24,7 @@ const envSchema = z.object({
   CARD_OWNER_NAME: z.string().optional(),
   ALLOWED_ORIGINS: z.string().default("*"),
   ADMIN_PANEL_URL: z.string().url().default("http://localhost:3002"),
+  BACKEND_URL: z.string().optional(),
 });
 
 export const env = envSchema.parse(process.env);

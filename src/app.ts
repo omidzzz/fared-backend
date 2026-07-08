@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
+import path from "path";
 import { env } from "./config/env";
 import { errorHandler, notFound } from "./middleware/errorHandler";
 
@@ -31,6 +32,10 @@ import adminRouter from "./modules/admin/admin.router";
 import usersRouter from "./modules/users/users.router";
 
 const app = express();
+
+// ── Serve uploaded files statically ──────────────────────
+const uploadsDir = path.resolve(process.cwd(), "uploads");
+app.use("/uploads", express.static(uploadsDir));
 
 // ── Global Middleware ────────────────────────────────────
 app.use(helmet());
