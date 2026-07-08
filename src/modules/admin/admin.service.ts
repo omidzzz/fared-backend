@@ -282,8 +282,7 @@ export async function getUsers(page: number, limit: number) {
   return { users, total };
 }
 
-<arg_key>task</arg_key>
-<arg_value>// ── Products (list) ──────────────────────────────
+// ── Products (list) ──────────────────────────────
 
 export async function getProducts(page: number, limit: number, search?: string, category?: string, featured?: boolean) {
   const where: any = {};
@@ -425,8 +424,7 @@ export async function scheduleSession(sessionId: string, scheduledAt: string) {
     },
   });
 
-<arg_key>task</arg_key>
-<arg_value>return session;
+  return session;
 }
 
 // ── Product (single) ──────────────────────────────
