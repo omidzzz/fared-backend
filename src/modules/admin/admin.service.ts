@@ -287,7 +287,8 @@ export async function getUsers(page: number, limit: number) {
 export async function getProducts(page: number, limit: number, search?: string, category?: string, featured?: boolean) {
   const where: any = {};
   if (search) where.OR = [{ nameFA: { contains: search } }, { nameEN: { contains: search } }];
-  if (category) where.category = { slug: category };
+  // Filter by type (stones, candles, accessories, clothes) instead of category.slug
+  if (category) where.type = category;
   if (featured !== undefined) where.isFeatured = featured;
 
   const [products, total] = await Promise.all([

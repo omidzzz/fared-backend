@@ -10,10 +10,16 @@ function groupAttributes(product: any) {
 }
 
 function formatProduct(product: any) {
-  const { attributes, ...rest } = product;
+  const { attributes, images, ...rest } = product;
   // Ensure variants and colorOptions are preserved
   return { 
     ...rest, 
+    images: (images || []).map((img: any) => ({
+      id: img.id,
+      url: img.url,
+      altFA: img.altFA || "",
+      sortOrder: img.sortOrder || 0,
+    })),
     attributes: groupAttributes(product),
     variants: product.variants || [],
     colorOptions: product.colorOptions || [],

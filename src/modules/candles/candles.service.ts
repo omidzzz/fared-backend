@@ -9,8 +9,17 @@ function groupAttributes(product: any) {
 }
 
 function formatProduct(product: any) {
-  const { attributes, ...rest } = product;
-  return { ...rest, attributes: groupAttributes(product) };
+  const { attributes, images, ...rest } = product;
+  return {
+    ...rest,
+    images: (images || []).map((img: any) => ({
+      id: img.id,
+      url: img.url,
+      altFA: img.altFA || "",
+      sortOrder: img.sortOrder || 0,
+    })),
+    attributes: groupAttributes(product),
+  };
 }
 
 export async function getCandles() {
