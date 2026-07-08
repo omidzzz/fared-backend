@@ -22,19 +22,37 @@ export async function uploadToStorage(
   buffer: Buffer,
   mimeType: string
 ): Promise<string> {
-  const { PutObjectCommand } = await import("@aws-sdk/client-s3");
+  console.log("[storage] uploadToStorage starting", {
+    key,
+    bufferSize: buffer?.length,
+    mimeType,
+    endpoint: env.STORAGE_ENDPOINT,
+    bucket: env.STORAGE_BUCKET,
+    region: env.STORAGE_REGION,
+    hasAccessKey: !!env.STORAGE_ACCESS_KEY,
+    hasSecretKey: !!env.STORAGE_SECRET_KEY,
+  });
 
-  await s3Client.send(
-    new PutObjectCommand({
-      Bucket: BUCKET_NAME,
-      Key: key,
-      Body: buffer,
-      ContentType: mimeType,
-    })
-  );
+  try {
+    const { PutObjectCommand } = await import("@aws-sdk/client-s3");
 
-  // Liara Object Storage URL format
-  return `${env.STORAGE_ENDPOINT}/${BUCKET_NAME}/${key}`;
+    await s3Client.send(
+      new PutObjectCommand({
+        Bucket: BUCKET_NAME,
+        Key: key,
+        Body: buffer,
+        ContentType: mimeType,
+      })
+    );
+
+    const url = `${env.STORAGE_ENDPOINT}/${BUCKET_NAME}/${key}`;
+    console.log("[storage] uploadToStorage success", { url });
+    // Liara Object Storage URL format
+    return url;
+  } catch (err) {
+    console.error("[storage] uploadToStorage error:", err);
+    throw err;
+  }
 }
 
 /**

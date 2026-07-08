@@ -11,7 +11,23 @@ export async function uploadMediaHandler(
   try {
     // Get folder from query params (since body is used by multer for file)
     const folder = (req.query.folder as string) || "products";
+
+    console.log("[media.controller] uploadMediaHandler called", {
+      userId: req.user?.id,
+      folder,
+      hasFile: !!req.file,
+      fileName: req.file?.originalname,
+      fileSize: req.file?.size,
+      fileMimeType: req.file?.mimetype,
+    });
+
     const mediaFile = await mediaService.uploadMedia(req.user!.id, req.file!, folder);
+
+    console.log("[media.controller] Upload successful", {
+      url: mediaFile.url,
+      key: mediaFile.key,
+    });
+
     sendSuccess(
       res,
       { url: mediaFile.url, key: mediaFile.key },
@@ -19,6 +35,7 @@ export async function uploadMediaHandler(
       "File uploaded"
     );
   } catch (error) {
+    console.error("[media.controller] Upload failed:", error);
     next(error);
   }
 }

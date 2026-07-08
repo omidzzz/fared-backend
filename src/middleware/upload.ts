@@ -16,11 +16,20 @@ export const upload = multer({
   limits: {
     fileSize: MAX_FILE_SIZE,
   },
-  fileFilter: (_req, file, cb) => {
+  fileFilter: (req, file, cb) => {
+    console.log("[multer] fileFilter called", {
+      fieldname: file.fieldname,
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+      allowedTypes: ALLOWED_MIME_TYPES,
+    });
     if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new AppError(`File type ${file.mimetype} is not allowed. Only images are accepted.`, 400));
+      const err = new AppError(`File type ${file.mimetype} is not allowed. Only images are accepted.`, 400);
+      console.error("[multer] file rejected:", err.message);
+      cb(err);
     }
   },
 });
