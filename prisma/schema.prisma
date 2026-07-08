@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
   output   = "../src/generated/prisma"
@@ -11,9 +8,550 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─────────────────────────────────────────────
-// ENUMS
-// ─────────────────────────────────────────────
+model User {
+  id                 String              @id @default(cuid())
+  nameFA             String?
+  name               String?
+  phone              String?             @unique
+  email              String?             @unique
+  passwordHash       String?
+  avatar             String?
+  role               Role                @default(CUSTOMER)
+  isVerified         Boolean             @default(false)
+  isActive           Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  addresses          Address[]
+  cartItems          CartItem[]
+  instructorCourses  Course[]            @relation("CourseInstructor")
+  forumReplies       ForumReply[]
+  forumTopics        ForumTopic[]
+  mentorProfile      Mentor?
+  mentorshipSessions MentorshipSession[]
+  notifications      Notification[]
+  otps               OTP[]
+  orders             Order[]
+  paymentReceipts    PaymentReceipt[]
+  refreshTokens      RefreshToken[]
+  reviews            Review[]
+  wishlistItems      WishlistItem[]
+}
+
+model OTP {
+  id        String   @id @default(cuid())
+  phone     String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Address {
+  id         String  @id @default(cuid())
+  userId     String
+  fullName   String
+  phone      String
+  country    String
+  city       String
+  address1   String
+  address2   String?
+  postalCode String
+  notes      String?
+  isDefault  Boolean @default(false)
+  user       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders     Order[]
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  nameFA      String
+  nameEN      String
+  chakraColor String
+  chakraHex   String
+  sortOrder   Int       @default(0)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  courses     Course[]
+  products    Product[]
+  tours       Tour[]
+}
+
+model Product {
+  id            String             @id @default(cuid())
+  slug          String             @unique
+  categoryId    String
+  type          String
+  nameFA        String
+  nameEN        String
+  descriptionFA String
+  descriptionEN String?
+  price         Int
+  currency      String             @default("IRT")
+  comparePrice  Int?
+  stock         Int                @default(0)
+  isActive      Boolean            @default(true)
+  isFeatured    Boolean            @default(false)
+  isBestSeller  Boolean            @default(false)
+  tagsEN        String[]
+  tagsFA        String[]
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  cartItems     CartItem[]
+  category      Category           @relation(fields: [categoryId], references: [id])
+  attributes    ProductAttribute[]
+  colorOptions  ProductColor[]
+  images        ProductImage[]
+  variants      ProductVariant[]
+  reviews       Review[]
+  wishlistItems WishlistItem[]
+}
+
+model ProductImage {
+  id        String  @id @default(cuid())
+  url       String
+  altFA     String?
+  sortOrder Int     @default(0)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model ProductAttribute {
+  id        String  @id @default(cuid())
+  key       String
+  valueFA   String
+  valueEN   String?
+  sortOrder Int     @default(0)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model ProductVariant {
+  id        String  @id @default(cuid())
+  label     String
+  stock     Int     @default(0)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model ProductColor {
+  id        String  @id @default(cuid())
+  hex       String
+  nameFA    String?
+  productId String
+  sortOrder Int     @default(0)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+model Tour {
+  id            String        @id @default(cuid())
+  slug          String        @unique
+  destination   String
+  titleFA       String
+  titleEN       String?
+  descriptionFA String
+  descriptionEN String?
+  highlightsFA  String[]
+  highlightsEN  String[]
+  dateRange     String
+  startDate     DateTime
+  endDate       DateTime
+  durationDays  Int
+  price         Int
+  currency      String        @default("USD")
+  spotsTotal    Int
+  spotsLeft     Int
+  heroImage     String?
+  includedFA    String[]
+  notIncludedFA String[]
+  instructor    String
+  level         TourLevel     @default(ALL_LEVELS)
+  isActive      Boolean       @default(true)
+  isFeatured    Boolean       @default(false)
+  categoryId    String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  category      Category      @relation(fields: [categoryId], references: [id])
+  itinerary     TourDay[]
+  enquiries     TourEnquiry[]
+  images        TourImage[]
+}
+
+model TourImage {
+  id        String @id @default(cuid())
+  url       String
+  sortOrder Int    @default(0)
+  tourId    String
+  tour      Tour   @relation(fields: [tourId], references: [id], onDelete: Cascade)
+}
+
+model TourDay {
+  id            String @id @default(cuid())
+  day           Int
+  titleFA       String
+  descriptionFA String
+  tourId        String
+  tour          Tour   @relation(fields: [tourId], references: [id], onDelete: Cascade)
+}
+
+model TourEnquiry {
+  id          String            @id @default(cuid())
+  fullName    String
+  email       String
+  phone       String?
+  tourId      String
+  arrivalDate DateTime?
+  message     String?
+  status      TourEnquiryStatus @default(NEW)
+  adminNotes  String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  tour        Tour              @relation(fields: [tourId], references: [id])
+
+  @@index([tourId])
+}
+
+model Course {
+  id            String             @id @default(cuid())
+  slug          String             @unique
+  nameFA        String
+  nameEN        String?
+  descriptionFA String
+  descriptionEN String?
+  price         Int
+  currency      String             @default("IRT")
+  instructorId  String
+  duration      String
+  durationWeeks Int
+  lessons       Int
+  level         CourseLevel        @default(BEGINNER)
+  language      CourseLanguage     @default(FA)
+  certificate   Boolean            @default(false)
+  heroImage     String?
+  isActive      Boolean            @default(true)
+  isFeatured    Boolean            @default(false)
+  categoryId    String
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  category      Category           @relation(fields: [categoryId], references: [id])
+  instructor    User               @relation("CourseInstructor", fields: [instructorId], references: [id])
+  enrollments   CourseEnrollment[]
+  curriculum    CourseLesson[]
+  reviews       Review[]
+  wishlistItems WishlistItem[]
+}
+
+model CourseLesson {
+  id              String  @id @default(cuid())
+  order           Int
+  titleFA         String
+  titleEN         String?
+  durationMinutes Int
+  isFree          Boolean @default(false)
+  courseId        String
+  course          Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+}
+
+model CourseEnrollment {
+  id        String   @id @default(cuid())
+  userId    String
+  courseId  String
+  orderId   String?
+  createdAt DateTime @default(now())
+  course    Course   @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
+}
+
+model Mentor {
+  id              String              @id @default(cuid())
+  userId          String              @unique
+  nameFA          String
+  nameEN          String?
+  titleFA         String
+  titleEN         String?
+  bioFA           String
+  bioEN           String?
+  specialtiesFA   String[]
+  specialtiesEN   String[]
+  sessionPrice    Int
+  sessionDuration Int
+  currency        String              @default("USD")
+  rating          Float               @default(0)
+  reviewCount     Int                 @default(0)
+  image           String?
+  isAvailable     Boolean             @default(true)
+  calendarUrl     String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  user            User                @relation(fields: [userId], references: [id])
+  sessions        MentorshipSession[]
+}
+
+model MentorshipSession {
+  id          String        @id @default(cuid())
+  userId      String
+  mentorId    String
+  scheduledAt DateTime?
+  status      BookingStatus @default(PENDING)
+  notes       String?
+  orderId     String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  mentor      Mentor        @relation(fields: [mentorId], references: [id])
+  order       Order?        @relation(fields: [orderId], references: [id])
+  user        User          @relation(fields: [userId], references: [id])
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String?
+  courseId  String?
+  mentorId  String?
+  variantId String?
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  product   Product? @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Order {
+  id                 String              @id @default(cuid())
+  orderNumber        String              @unique
+  userId             String
+  status             OrderStatus         @default(PENDING)
+  paymentMethod      PaymentMethod
+  paymentStatus      PaymentStatus       @default(PENDING)
+  paymentConfirmedBy String?
+  paymentConfirmedAt DateTime?
+  subtotal           Int
+  shippingAmount     Int                 @default(0)
+  discountAmount     Int                 @default(0)
+  total              Int
+  currency           String              @default("IRT")
+  addressId          String?
+  trackingCode       String?
+  notes              String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  mentorshipSessions MentorshipSession[]
+  address            Address?            @relation(fields: [addressId], references: [id])
+  user               User                @relation(fields: [userId], references: [id])
+  items              OrderItem[]
+  receipt            PaymentReceipt?
+}
+
+model OrderItem {
+  id          String  @id @default(cuid())
+  orderId     String
+  productType String
+  refId       String
+  nameFA      String
+  nameEN      String?
+  price       Int
+  quantity    Int
+  variant     String?
+  image       String?
+  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model PaymentReceipt {
+  id           String        @id @default(cuid())
+  orderId      String        @unique
+  userId       String
+  imageUrl     String
+  amount       Int
+  status       ReceiptStatus @default(PENDING)
+  reviewedBy   String?
+  reviewedAt   DateTime?
+  rejectReason String?
+  uploadedAt   DateTime      @default(now())
+  order        Order         @relation(fields: [orderId], references: [id])
+  user         User          @relation(fields: [userId], references: [id])
+}
+
+model Review {
+  id           String    @id @default(cuid())
+  userId       String
+  productId    String?
+  courseId     String?
+  productType  String?
+  rating       Int
+  bodyFA       String
+  bodyEN       String?
+  isApproved   Boolean   @default(false)
+  adminReply   String?
+  adminReplyAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  course       Course?   @relation(fields: [courseId], references: [id])
+  product      Product?  @relation(fields: [productId], references: [id])
+  user         User      @relation(fields: [userId], references: [id])
+}
+
+model WishlistItem {
+  id          String   @id @default(cuid())
+  userId      String
+  productId   String?
+  courseId    String?
+  productType String
+  addedAt     DateTime @default(now())
+  course      Course?  @relation(fields: [courseId], references: [id])
+  product     Product? @relation(fields: [productId], references: [id])
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, productId])
+}
+
+model EducationalPost {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  titleFA     String
+  titleEN     String?
+  categoryFA  String
+  categoryEN  String?
+  bodyFA      String
+  bodyEN      String?
+  excerptFA   String
+  image       String?
+  tagsFA      String[]
+  readMinutes Int       @default(5)
+  isPublished Boolean   @default(false)
+  publishedAt DateTime?
+  authorId    String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Book {
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  titleFA       String
+  titleEN       String?
+  authorFA      String
+  authorEN      String?
+  descriptionFA String
+  categoryFA    String
+  coverImage    String?
+  year          Int?
+  pages         Int?
+  rating        Float    @default(0)
+  isPublished   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Article {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  titleFA     String
+  excerptFA   String
+  bodyFA      String
+  authorFA    String
+  categoryFA  String
+  image       String?
+  readMinutes Int       @default(5)
+  isFeatured  Boolean   @default(false)
+  isPublished Boolean   @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Poem {
+  id                 String   @id @default(cuid())
+  slug               String   @unique
+  titleFA            String
+  poetFA             String
+  poetEN             String?
+  era                String?
+  linesFA            String[]
+  theme              String[]
+  backgroundGradient String?
+  isPublished        Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Quote {
+  id            String    @id @default(cuid())
+  textFA        String
+  textEN        String?
+  sourceFA      String
+  sourceEN      String?
+  scheduledDate DateTime?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+}
+
+model ForumTopic {
+  id         String       @id @default(cuid())
+  slug       String       @unique
+  titleFA    String
+  titleEN    String?
+  bodyFA     String
+  bodyEN     String?
+  authorId   String
+  category   String
+  tags       String[]
+  viewCount  Int          @default(0)
+  isPinned   Boolean      @default(false)
+  isLocked   Boolean      @default(false)
+  isApproved Boolean      @default(false)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  replies    ForumReply[]
+  author     User         @relation(fields: [authorId], references: [id])
+}
+
+model ForumReply {
+  id         String     @id @default(cuid())
+  topicId    String
+  authorId   String
+  bodyFA     String
+  bodyEN     String?
+  isApproved Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+  author     User       @relation(fields: [authorId], references: [id])
+  topic      ForumTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  titleFA   String
+  bodyFA    String
+  isRead    Boolean          @default(false)
+  data      Json?
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MediaFile {
+  id         String   @id @default(cuid())
+  url        String
+  key        String   @unique
+  mimeType   String
+  sizeBytes  Int
+  uploadedBy String
+  folder     String
+  createdAt  DateTime @default(now())
+}
 
 enum Role {
   CUSTOMER
@@ -38,7 +576,7 @@ enum PaymentMethod {
 
 enum PaymentStatus {
   PENDING
-  AWAITING_CONFIRMATION // card-to-card: receipt uploaded, waiting admin
+  AWAITING_CONFIRMATION
   CONFIRMED
   FAILED
 }
@@ -88,628 +626,4 @@ enum NotificationType {
   MENTORSHIP_REMINDER
   TOUR_ENQUIRY_UPDATE
   GENERAL
-}
-
-// ─────────────────────────────────────────────
-// USERS & AUTH
-// ─────────────────────────────────────────────
-
-model User {
-  id           String   @id @default(cuid())
-  nameFA       String?
-  name         String?
-  phone        String?  @unique
-  email        String?  @unique
-  passwordHash String?
-  avatar       String?
-  role         Role     @default(CUSTOMER)
-  isVerified   Boolean  @default(false)
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  otps                 OTP[]
-  refreshTokens        RefreshToken[]
-  addresses            Address[]
-  orders               Order[]
-  cartItems            CartItem[]
-  wishlistItems        WishlistItem[]
-  reviews              Review[]
-  notifications        Notification[]
-  forumTopics          ForumTopic[]
-  forumReplies         ForumReply[]
-  mentorProfile        Mentor?
-  instructorCourses    Course[]       @relation("CourseInstructor")
-  mentorshipSessions   MentorshipSession[]
-  paymentReceipts      PaymentReceipt[]
-}
-
-model OTP {
-  id        String   @id @default(cuid())
-  phone     String
-  code      String   // stored as SHA-256 hash
-  expiresAt DateTime
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now())
-  userId    String?
-  user      User?    @relation(fields: [userId], references: [id])
-}
-
-model RefreshToken {
-  id        String   @id @default(cuid())
-  token     String   @unique // SHA-256 hash
-  userId    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-// ─────────────────────────────────────────────
-// ADDRESSES
-// ─────────────────────────────────────────────
-
-model Address {
-  id          String  @id @default(cuid())
-  userId      String
-  fullName    String
-  phone       String
-  country     String
-  city        String
-  address1    String  @db.Text
-  address2    String?
-  postalCode  String
-  notes       String?
-  isDefault   Boolean @default(false)
-  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  orders      Order[]
-}
-
-// ─────────────────────────────────────────────
-// CATEGORIES
-// ─────────────────────────────────────────────
-
-model Category {
-  id          String    @id @default(cuid())
-  slug        String    @unique // e.g. "stones", "candles"
-  nameFA      String
-  nameEN      String
-  chakraColor String    // CSS var name: "--chakra-throat"
-  chakraHex   String    // "#2980b9"
-  sortOrder   Int       @default(0)
-  isActive    Boolean   @default(true)
-  products    Product[]
-  tours       Tour[]
-  courses     Course[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-}
-
-// ─────────────────────────────────────────────
-// PRODUCTS (base + typed extensions)
-// ─────────────────────────────────────────────
-
-model Product {
-  id            String   @id @default(cuid())
-  slug          String   @unique
-  categoryId    String
-  // type discriminator: 'clothes' | 'candles' | 'accessories' | 'stones'
-  // courses and mentorship handled in separate models
-  type          String
-  nameFA        String
-  nameEN        String
-  descriptionFA String   @db.Text
-  descriptionEN String?  @db.Text
-  price         Int      // Integer: Toman for IRT, cents for USD
-  currency      String   @default("IRT") // 'IRT' | 'USD'
-  comparePrice  Int?
-  stock         Int      @default(0)
-  isActive      Boolean  @default(true)
-  isFeatured    Boolean  @default(false)
-  isBestSeller  Boolean  @default(false)
-  tagsEN        String[] // PostgreSQL array
-  tagsFA        String[]
-  category      Category @relation(fields: [categoryId], references: [id])
-  images        ProductImage[]
-  attributes    ProductAttribute[]
-  variants      ProductVariant[]   // sizes for clothes
-  colorOptions  ProductColor[]     // colors for clothes
-  cartItems     CartItem[]
-  wishlistItems WishlistItem[]
-  reviews       Review[]
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}
-
-model ProductImage {
-  id        String  @id @default(cuid())
-  url       String
-  altFA     String?
-  sortOrder Int     @default(0)
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-}
-
-// Generic key-value for type-specific fields
-// e.g. key="scent" valueFA="وانیل" valueEN="Vanilla"
-//      key="burnTime" valueFA="۴۰-۵۰ ساعت" valueEN="40-50 hours"
-//      key="property" valueFA="آرامش" valueEN="Calm"
-//      key="origin" valueFA="برزیل" valueEN="Brazil"
-//      key="material" valueFA="نخ پنبه‌ای" valueEN="Cotton"
-//      key="intention" valueFA="محافظت" valueEN="Protection"
-model ProductAttribute {
-  id        String  @id @default(cuid())
-  key       String
-  valueFA   String
-  valueEN   String?
-  sortOrder Int     @default(0)
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-}
-
-model ProductVariant {
-  id        String  @id @default(cuid())
-  label     String  // "XS" | "S" | "M" | "L" | "XL" | "XXL"
-  stock     Int     @default(0)
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-}
-
-model ProductColor {
-  id        String  @id @default(cuid())
-  hex       String  // e.g. "#8B2635"
-  nameFA    String?
-  sortOrder Int     @default(0)
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-}
-
-// ─────────────────────────────────────────────
-// TOURS
-// ─────────────────────────────────────────────
-
-model Tour {
-  id            String    @id @default(cuid())
-  slug          String    @unique
-  destination   String    // e.g. "Bali"
-  titleFA       String
-  titleEN       String?
-  descriptionFA String    @db.Text
-  descriptionEN String?   @db.Text
-  highlightsFA  String[]
-  highlightsEN  String[]
-  dateRange     String    // display string: "Jul 12 – Jul 19, 2026"
-  startDate     DateTime
-  endDate       DateTime
-  durationDays  Int
-  price         Int
-  currency      String    @default("USD")
-  spotsTotal    Int
-  spotsLeft     Int
-  heroImage     String?
-  images        TourImage[]
-  includedFA    String[]
-  notIncludedFA String[]
-  itinerary     TourDay[]
-  instructor    String    // guide name (plain text)
-  level         TourLevel @default(ALL_LEVELS)
-  isActive      Boolean   @default(true)
-  isFeatured    Boolean   @default(false)
-  categoryId    String
-  category      Category  @relation(fields: [categoryId], references: [id])
-  enquiries     TourEnquiry[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-}
-
-model TourImage {
-  id        String @id @default(cuid())
-  url       String
-  sortOrder Int    @default(0)
-  tourId    String
-  tour      Tour   @relation(fields: [tourId], references: [id], onDelete: Cascade)
-}
-
-model TourDay {
-  id            String @id @default(cuid())
-  day           Int
-  titleFA       String
-  descriptionFA String @db.Text
-  tourId        String
-  tour          Tour   @relation(fields: [tourId], references: [id], onDelete: Cascade)
-}
-
-// Tours use ENQUIRY flow, not direct purchase
-model TourEnquiry {
-  id          String            @id @default(cuid())
-  fullName    String
-  email       String
-  phone       String?
-  tourId      String
-  arrivalDate DateTime?
-  message     String?           @db.Text
-  status      TourEnquiryStatus @default(NEW)
-  adminNotes  String?
-  tour        Tour              @relation(fields: [tourId], references: [id])
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
-
-  @@index([tourId])
-}
-
-// ─────────────────────────────────────────────
-// COURSES
-// ─────────────────────────────────────────────
-
-model Course {
-  id            String       @id @default(cuid())
-  slug          String       @unique
-  nameFA        String
-  nameEN        String?
-  descriptionFA String       @db.Text
-  descriptionEN String?      @db.Text
-  price         Int
-  currency      String       @default("IRT")
-  instructorId  String
-  instructor    User         @relation("CourseInstructor", fields: [instructorId], references: [id])
-  duration      String       // display: "8 weeks"
-  durationWeeks Int
-  lessons       Int
-  level         CourseLevel  @default(BEGINNER)
-  language      CourseLanguage @default(FA)
-  certificate   Boolean      @default(false)
-  heroImage     String?
-  isActive      Boolean      @default(true)
-  isFeatured    Boolean      @default(false)
-  categoryId    String
-  category      Category     @relation(fields: [categoryId], references: [id])
-  curriculum    CourseLesson[]
-  enrollments   CourseEnrollment[]
-  reviews       Review[]
-  wishlistItems WishlistItem[]
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
-}
-
-model CourseLesson {
-  id              String  @id @default(cuid())
-  order           Int
-  titleFA         String
-  titleEN         String?
-  durationMinutes Int
-  isFree          Boolean @default(false) // preview lesson
-  courseId        String
-  course          Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
-}
-
-model CourseEnrollment {
-  id       String  @id @default(cuid())
-  userId   String
-  courseId String
-  orderId  String?
-  course   Course  @relation(fields: [courseId], references: [id])
-  createdAt DateTime @default(now())
-
-  @@unique([userId, courseId])
-}
-
-// ─────────────────────────────────────────────
-// MENTORSHIP
-// ─────────────────────────────────────────────
-
-model Mentor {
-  id              String  @id @default(cuid())
-  userId          String  @unique
-  nameFA          String
-  nameEN          String?
-  titleFA         String  // e.g. "درمانگر انرژی کریستال"
-  titleEN         String?
-  bioFA           String  @db.Text
-  bioEN           String? @db.Text
-  specialtiesFA   String[]
-  specialtiesEN   String[]
-  sessionPrice    Int
-  sessionDuration Int     // minutes
-  currency        String  @default("USD")
-  rating          Float   @default(0)
-  reviewCount     Int     @default(0)
-  image           String?
-  isAvailable     Boolean @default(true)
-  calendarUrl     String?
-  user            User    @relation(fields: [userId], references: [id])
-  sessions        MentorshipSession[]
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-}
-
-model MentorshipSession {
-  id          String        @id @default(cuid())
-  userId      String
-  mentorId    String
-  scheduledAt DateTime?
-  status      BookingStatus @default(PENDING)
-  notes       String?       @db.Text
-  orderId     String?
-  order       Order?        @relation(fields: [orderId], references: [id])
-  user        User          @relation(fields: [userId], references: [id])
-  mentor      Mentor        @relation(fields: [mentorId], references: [id])
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-}
-
-// ─────────────────────────────────────────────
-// CART & ORDERS
-// ─────────────────────────────────────────────
-
-model CartItem {
-  id        String   @id @default(cuid())
-  userId    String
-  // One of these is set — products, courses, or mentorship sessions
-  productId String?
-  courseId  String?
-  mentorId  String?  // for booking a mentorship session
-  variantId String?  // size variant for clothes
-  quantity  Int      @default(1)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product   Product? @relation(fields: [productId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Order {
-  id                 String        @id @default(cuid())
-  orderNumber        String        @unique // "ORD-8X2KP9"
-  userId             String
-  status             OrderStatus   @default(PENDING)
-  paymentMethod      PaymentMethod
-  paymentStatus      PaymentStatus @default(PENDING)
-  paymentConfirmedBy String?       // admin userId
-  paymentConfirmedAt DateTime?
-  subtotal           Int
-  shippingAmount     Int           @default(0)
-  discountAmount     Int           @default(0)
-  total              Int
-  currency           String        @default("IRT")
-  addressId          String?
-  trackingCode       String?
-  notes              String?       @db.Text
-  user               User          @relation(fields: [userId], references: [id])
-  address            Address?      @relation(fields: [addressId], references: [id])
-  items              OrderItem[]
-  receipt            PaymentReceipt?
-  mentorshipSessions MentorshipSession[]
-  createdAt          DateTime      @default(now())
-  updatedAt          DateTime      @updatedAt
-}
-
-model OrderItem {
-  id          String  @id @default(cuid())
-  orderId     String
-  // Type of item
-  productType String  // 'clothes' | 'candle' | 'accessory' | 'stone' | 'course' | 'mentorship'
-  refId       String  // productId or courseId or mentorId — snapshot ref
-  nameFA      String  // name snapshot at time of order
-  nameEN      String?
-  price       Int     // price snapshot
-  quantity    Int
-  variant     String? // size for clothes
-  image       String? // first image snapshot
-  order       Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-}
-
-// ─────────────────────────────────────────────
-// PAYMENTS
-// ─────────────────────────────────────────────
-
-// For card-to-card: user uploads a receipt image
-model PaymentReceipt {
-  id           String        @id @default(cuid())
-  orderId      String        @unique
-  userId       String
-  imageUrl     String        // Object Storage URL
-  amount       Int
-  status       ReceiptStatus @default(PENDING)
-  reviewedBy   String?       // admin userId
-  reviewedAt   DateTime?
-  rejectReason String?
-  order        Order         @relation(fields: [orderId], references: [id])
-  user         User          @relation(fields: [userId], references: [id])
-  uploadedAt   DateTime      @default(now())
-}
-
-// ─────────────────────────────────────────────
-// REVIEWS / COMMENTS
-// ─────────────────────────────────────────────
-
-model Review {
-  id          String   @id @default(cuid())
-  userId      String
-  // One of these targets is set
-  productId   String?
-  courseId    String?
-  productType String?  // for display/routing
-  rating      Int      // 1–5
-  bodyFA      String   @db.Text
-  bodyEN      String?  @db.Text
-  isApproved  Boolean  @default(false) // admin must approve
-  adminReply  String?  @db.Text
-  adminReplyAt DateTime?
-  user        User     @relation(fields: [userId], references: [id])
-  product     Product? @relation(fields: [productId], references: [id])
-  course      Course?  @relation(fields: [courseId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-// ─────────────────────────────────────────────
-// WISHLIST
-// ─────────────────────────────────────────────
-
-model WishlistItem {
-  id          String   @id @default(cuid())
-  userId      String
-  productId   String?
-  courseId    String?
-  productType String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  product     Product? @relation(fields: [productId], references: [id])
-  course      Course?  @relation(fields: [courseId], references: [id])
-  addedAt     DateTime @default(now())
-
-  @@unique([userId, productId])
-}
-
-// ─────────────────────────────────────────────
-// EDITORIAL (تحریریه)
-// ─────────────────────────────────────────────
-
-model EducationalPost {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  titleFA     String
-  titleEN     String?
-  categoryFA  String
-  categoryEN  String?
-  bodyFA      String   @db.Text
-  bodyEN      String?  @db.Text
-  excerptFA   String
-  image       String?
-  tagsFA      String[]
-  readMinutes Int      @default(5)
-  isPublished Boolean  @default(false)
-  publishedAt DateTime?
-  authorId    String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model Book {
-  id            String  @id @default(cuid())
-  slug          String  @unique
-  titleFA       String
-  titleEN       String?
-  authorFA      String
-  authorEN      String?
-  descriptionFA String  @db.Text
-  categoryFA    String
-  coverImage    String?
-  year          Int?
-  pages         Int?
-  rating        Float   @default(0) // curated, not user-generated
-  isPublished   Boolean @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-}
-
-model Article {
-  id          String   @id @default(cuid())
-  slug        String   @unique
-  titleFA     String
-  excerptFA   String
-  bodyFA      String   @db.Text
-  authorFA    String
-  categoryFA  String
-  image       String?
-  readMinutes Int      @default(5)
-  isFeatured  Boolean  @default(false)
-  isPublished Boolean  @default(false)
-  publishedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model Poem {
-  id                 String   @id @default(cuid())
-  slug               String   @unique
-  titleFA            String
-  poetFA             String
-  poetEN             String?
-  era                String?
-  linesFA            String[] // array of lines
-  theme              String[]
-  backgroundGradient String?  // CSS gradient for card display
-  isPublished        Boolean  @default(false)
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
-}
-
-// ─────────────────────────────────────────────
-// QUOTE OF THE DAY
-// ─────────────────────────────────────────────
-
-model Quote {
-  id            String    @id @default(cuid())
-  textFA        String    @db.Text
-  textEN        String?
-  sourceFA      String    // attribution
-  sourceEN      String?
-  scheduledDate DateTime? // null = goes into random pool
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-}
-
-// ─────────────────────────────────────────────
-// FORUM
-// ─────────────────────────────────────────────
-
-model ForumTopic {
-  id          String       @id @default(cuid())
-  slug        String       @unique
-  titleFA     String
-  titleEN     String?
-  bodyFA      String       @db.Text
-  bodyEN      String?      @db.Text
-  authorId    String
-  category    String
-  tags        String[]
-  viewCount   Int          @default(0)
-  isPinned    Boolean      @default(false)
-  isLocked    Boolean      @default(false)
-  isApproved  Boolean      @default(false) // admin must approve
-  author      User         @relation(fields: [authorId], references: [id])
-  replies     ForumReply[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-}
-
-model ForumReply {
-  id         String     @id @default(cuid())
-  topicId    String
-  authorId   String
-  bodyFA     String     @db.Text
-  bodyEN     String?
-  isApproved Boolean    @default(false)
-  topic      ForumTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
-  author     User       @relation(fields: [authorId], references: [id])
-  createdAt  DateTime   @default(now())
-}
-
-// ─────────────────────────────────────────────
-// NOTIFICATIONS
-// ─────────────────────────────────────────────
-
-model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  type      NotificationType
-  titleFA   String
-  bodyFA    String
-  isRead    Boolean          @default(false)
-  data      Json?            // extra payload (orderId, enquiryId, etc.)
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime         @default(now())
-}
-
-// ─────────────────────────────────────────────
-// MEDIA LIBRARY
-// ─────────────────────────────────────────────
-
-model MediaFile {
-  id         String   @id @default(cuid())
-  url        String
-  key        String   @unique // storage path: "products/stones/amethyst.jpg"
-  mimeType   String
-  sizeBytes  Int
-  uploadedBy String   // userId
-  folder     String   // e.g. "products/stones", "receipts", "avatars"
-  createdAt  DateTime @default(now())
 }
