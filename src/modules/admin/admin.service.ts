@@ -514,6 +514,7 @@ export async function getArticles(page: number, limit: number, category?: string
       excerpt: a.excerptFA,
       body: a.bodyFA,
       author: a.authorFA,
+      published: a.isPublished,
     })),
     total 
   };
@@ -529,6 +530,7 @@ export async function getArticleById(id: string) {
     excerpt: article.excerptFA,
     body: article.bodyFA,
     author: article.authorFA,
+    published: article.isPublished,
   };
 }
 
@@ -551,6 +553,7 @@ export async function createArticle(data: any) {
   if (data.readMinutes !== undefined) articleData.readMinutes = data.readMinutes;
   if (data.isFeatured !== undefined) articleData.isFeatured = data.isFeatured;
   if (data.isPublished !== undefined) articleData.isPublished = data.isPublished;
+  if (data.published !== undefined) articleData.isPublished = data.published;
   if (data.publishedAt !== undefined) articleData.publishedAt = data.publishedAt;
   
   articleData.slug = data.slug || generateSlug(articleData.titleFA || data.titleFA);
@@ -563,6 +566,7 @@ export async function createArticle(data: any) {
     excerpt: article.excerptFA,
     body: article.bodyFA,
     author: article.authorFA,
+    published: article.isPublished,
   };
 }
 
@@ -594,6 +598,7 @@ export async function updateArticle(id: string, data: any) {
     excerpt: article.excerptFA,
     body: article.bodyFA,
     author: article.authorFA,
+    published: article.isPublished,
   };
 }
 
