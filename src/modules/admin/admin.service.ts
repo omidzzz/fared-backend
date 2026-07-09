@@ -1256,6 +1256,7 @@ export async function updateCourse(id: string, data: any) {
     titleEn: course.nameEN,
     instructor: null,
     image: course.heroImage ?? null,
+    featured: course.isFeatured,
     active: course.isActive,
   };
 }
