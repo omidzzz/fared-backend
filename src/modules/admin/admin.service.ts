@@ -1,17 +1,33 @@
 import prisma from "../../config/database";
 import { AppError } from "../../middleware/errorHandler";
-import { PaymentStatus, ReceiptStatus, NotificationType, TourEnquiryStatus, BookingStatus } from "../../generated/prisma";
+import {
+  PaymentStatus,
+  ReceiptStatus,
+  NotificationType,
+  TourEnquiryStatus,
+  BookingStatus,
+} from "../../generated/prisma";
 import { OrderStatus } from "../../generated/prisma";
 
 // ── Dashboard Stats ──────────────────────────────
 
 export async function getStats() {
   const [
-    totalOrders, pendingPayments, totalRevenue, totalUsers, totalProducts,
-    recentOrders, lowStockProducts, pendingComments, pendingForumTopics, newEnquiries,
+    totalOrders,
+    pendingPayments,
+    totalRevenue,
+    totalUsers,
+    totalProducts,
+    recentOrders,
+    lowStockProducts,
+    pendingComments,
+    pendingForumTopics,
+    newEnquiries,
   ] = await Promise.all([
     prisma.order.count(),
-    prisma.order.count({ where: { paymentStatus: PaymentStatus.AWAITING_CONFIRMATION } }),
+    prisma.order.count({
+      where: { paymentStatus: PaymentStatus.AWAITING_CONFIRMATION },
+    }),
     prisma.order.aggregate({
       where: { paymentStatus: PaymentStatus.CONFIRMED },
       _sum: { total: true },
@@ -20,11 +36,13 @@ export async function getStats() {
     prisma.product.count({ where: { isActive: true } }),
     prisma.order.findMany({
       include: { user: { select: { id: true, nameFA: true, phone: true } } },
-      orderBy: { createdAt: "desc" }, take: 10,
+      orderBy: { createdAt: "desc" },
+      take: 10,
     }),
     prisma.product.findMany({
       where: { isActive: true, stock: { lt: 5 } },
-      include: { images: { take: 1 } }, take: 10,
+      include: { images: { take: 1 } },
+      take: 10,
     }),
     prisma.review.count({ where: { isApproved: false } }),
     prisma.forumTopic.count({ where: { isApproved: false } }),
@@ -32,15 +50,26 @@ export async function getStats() {
   ]);
 
   return {
-    totalOrders, pendingPayments, totalRevenue: totalRevenue._sum.total ?? 0,
-    totalUsers, totalProducts, recentOrders, lowStockProducts,
-    pendingComments, pendingForumTopics, newEnquiries,
+    totalOrders,
+    pendingPayments,
+    totalRevenue: totalRevenue._sum.total ?? 0,
+    totalUsers,
+    totalProducts,
+    recentOrders,
+    lowStockProducts,
+    pendingComments,
+    pendingForumTopics,
+    newEnquiries,
   };
 }
 
 // ── Orders ───────────────────────────────────────
 
-export async function getAdminOrders(page: number, limit: number, status?: string) {
+export async function getAdminOrders(
+  page: number,
+  limit: number,
+  status?: string,
+) {
   const where: any = {};
   if (status) where.status = status;
 
@@ -49,7 +78,8 @@ export async function getAdminOrders(page: number, limit: number, status?: strin
       where,
       include: {
         user: { select: { id: true, nameFA: true, phone: true, email: true } },
-        items: true, receipt: true,
+        items: true,
+        receipt: true,
       },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * limit,
@@ -64,7 +94,7 @@ export async function updateOrderStatus(
   orderId: string,
   status: string,
   trackingCode?: string,
-  adminId?: string
+  adminId?: string,
 ) {
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order) throw new AppError("Order not found", 404);
@@ -74,7 +104,9 @@ export async function updateOrderStatus(
     data: {
       status: status as OrderStatus,
       trackingCode: trackingCode ?? undefined,
-      ...(status === "DELIVERED" ? { paymentConfirmedBy: adminId, paymentConfirmedAt: new Date() } : {}),
+      ...(status === "DELIVERED"
+        ? { paymentConfirmedBy: adminId, paymentConfirmedAt: new Date() }
+        : {}),
     },
   });
 
@@ -106,14 +138,19 @@ export async function getPendingReceipts() {
 
 export async function approveReceipt(receiptId: string, adminId: string) {
   const receipt = await prisma.paymentReceipt.findUnique({
-    where: { id: receiptId }, include: { order: true },
+    where: { id: receiptId },
+    include: { order: true },
   });
   if (!receipt) throw new AppError("Receipt not found", 404);
 
   const result = await prisma.$transaction(async (tx: any) => {
     await tx.paymentReceipt.update({
       where: { id: receipt.id },
-      data: { status: ReceiptStatus.APPROVED, reviewedBy: adminId, reviewedAt: new Date() },
+      data: {
+        status: ReceiptStatus.APPROVED,
+        reviewedBy: adminId,
+        reviewedAt: new Date(),
+      },
     });
 
     const order = await tx.order.update({
@@ -147,16 +184,26 @@ export async function approveReceipt(receiptId: string, adminId: string) {
   return result;
 }
 
-export async function rejectReceipt(receiptId: string, rejectReason: string, adminId: string) {
+export async function rejectReceipt(
+  receiptId: string,
+  rejectReason: string,
+  adminId: string,
+) {
   const receipt = await prisma.paymentReceipt.findUnique({
-    where: { id: receiptId }, include: { order: true },
+    where: { id: receiptId },
+    include: { order: true },
   });
   if (!receipt) throw new AppError("Receipt not found", 404);
 
   const result = await prisma.$transaction(async (tx: any) => {
     await tx.paymentReceipt.update({
       where: { id: receipt.id },
-      data: { status: ReceiptStatus.REJECTED, rejectReason, reviewedBy: adminId, reviewedAt: new Date() },
+      data: {
+        status: ReceiptStatus.REJECTED,
+        rejectReason,
+        reviewedBy: adminId,
+        reviewedAt: new Date(),
+      },
     });
     return tx.order.update({
       where: { id: receipt.orderId },
@@ -189,10 +236,17 @@ export async function getEnquiries(status?: string) {
   });
 }
 
-export async function updateEnquiryStatus(id: string, status: string, adminNotes?: string) {
+export async function updateEnquiryStatus(
+  id: string,
+  status: string,
+  adminNotes?: string,
+) {
   return prisma.tourEnquiry.update({
     where: { id },
-    data: { status: status as TourEnquiryStatus, adminNotes: adminNotes ?? undefined },
+    data: {
+      status: status as TourEnquiryStatus,
+      adminNotes: adminNotes ?? undefined,
+    },
   });
 }
 
@@ -255,11 +309,17 @@ export async function getPendingForum() {
 }
 
 export async function approveTopic(id: string) {
-  return prisma.forumTopic.update({ where: { id }, data: { isApproved: true } });
+  return prisma.forumTopic.update({
+    where: { id },
+    data: { isApproved: true },
+  });
 }
 
 export async function approveReply(id: string) {
-  return prisma.forumReply.update({ where: { id }, data: { isApproved: true } });
+  return prisma.forumReply.update({
+    where: { id },
+    data: { isApproved: true },
+  });
 }
 
 // ── Users ────────────────────────────────────────
@@ -268,9 +328,16 @@ export async function getUsers(page: number, limit: number) {
   const [users, total] = await Promise.all([
     prisma.user.findMany({
       select: {
-        id: true, nameFA: true, name: true, phone: true, email: true,
-        role: true, isVerified: true, isActive: true,
-        avatar: true, createdAt: true,
+        id: true,
+        nameFA: true,
+        name: true,
+        phone: true,
+        email: true,
+        role: true,
+        isVerified: true,
+        isActive: true,
+        avatar: true,
+        createdAt: true,
         _count: { select: { orders: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -284,9 +351,19 @@ export async function getUsers(page: number, limit: number) {
 
 // ── Products (list) ──────────────────────────────
 
-export async function getProducts(page: number, limit: number, search?: string, category?: string, featured?: boolean) {
+export async function getProducts(
+  page: number,
+  limit: number,
+  search?: string,
+  category?: string,
+  featured?: boolean,
+) {
   const where: any = {};
-  if (search) where.OR = [{ nameFA: { contains: search } }, { nameEN: { contains: search } }];
+  if (search)
+    where.OR = [
+      { nameFA: { contains: search } },
+      { nameEN: { contains: search } },
+    ];
   if (category) where.category = { slug: category };
   if (featured !== undefined) where.isFeatured = featured;
 
@@ -321,25 +398,31 @@ export async function getProducts(page: number, limit: number, search?: string, 
 export async function createProduct(data: any) {
   const { generateSlug } = await import("../../utils/slug");
   const { images, variants, colorOptions, ...rest } = data;
-  
+
   const productData: any = { ...rest };
   productData.slug = data.slug || generateSlug(data.nameFA);
-  
+
   // Map field names
   if (data.nameFa !== undefined) productData.nameFA = data.nameFa;
   if (data.nameEn !== undefined) productData.nameEN = data.nameEn;
-  if (data.descriptionFa !== undefined) productData.descriptionFA = data.descriptionFa;
-  if (data.descriptionEn !== undefined) productData.descriptionEN = data.descriptionEn;
-  if (data.featured !== undefined) productData.isFeatured = Boolean(data.featured);
-  if (data.isBestSeller !== undefined) productData.isBestSeller = Boolean(data.isBestSeller);
+  if (data.descriptionFa !== undefined)
+    productData.descriptionFA = data.descriptionFa;
+  if (data.descriptionEn !== undefined)
+    productData.descriptionEN = data.descriptionEn;
+  if (data.featured !== undefined)
+    productData.isFeatured = Boolean(data.featured);
+  if (data.isBestSeller !== undefined)
+    productData.isBestSeller = Boolean(data.isBestSeller);
   if (data.active !== undefined) productData.isActive = Boolean(data.active);
-  if (data.category !== undefined) productData.category = { connect: { slug: data.category } };
+  if (data.category !== undefined)
+    productData.category = { connect: { slug: data.category } };
   if (data.stock !== undefined) productData.stock = Number(data.stock);
   if (data.price !== undefined) productData.price = Number(data.price);
-  if (data.comparePrice !== undefined) productData.comparePrice = Number(data.comparePrice);
+  if (data.comparePrice !== undefined)
+    productData.comparePrice = Number(data.comparePrice);
   if (data.tagsFA !== undefined) productData.tagsFA = data.tagsFA;
   if (data.tagsEN !== undefined) productData.tagsEN = data.tagsEN;
-  
+
   // Handle relations
   if (images && Array.isArray(images)) {
     productData.images = {
@@ -353,37 +436,69 @@ export async function createProduct(data: any) {
   }
   if (colorOptions && Array.isArray(colorOptions)) {
     productData.colorOptions = {
-      create: colorOptions.map((c: any) => ({ hex: c.hex, nameFA: c.name, sortOrder: 0 })),
+      create: colorOptions.map((c: any) => ({
+        hex: c.hex,
+        nameFA: c.name,
+        sortOrder: 0,
+      })),
     };
   }
-  
+
   return prisma.product.create({ data: productData });
 }
 
 export async function updateProduct(id: string, data: any) {
   const updateData: any = { ...data };
-  if (data.nameFa !== undefined) { updateData.nameFA = data.nameFa; delete updateData.nameFa; }
-  if (data.nameEn !== undefined) { updateData.nameEN = data.nameEn; delete updateData.nameEn; }
-  if (data.descriptionFa !== undefined) { updateData.descriptionFA = data.descriptionFa; delete updateData.descriptionFa; }
-  if (data.descriptionEn !== undefined) { updateData.descriptionEN = data.descriptionEn; delete updateData.descriptionEn; }
-  if (data.featured !== undefined) { updateData.isFeatured = Boolean(data.featured); delete updateData.featured; }
-  if (data.isBestSeller !== undefined) { updateData.isBestSeller = Boolean(data.isBestSeller); delete updateData.isBestSeller; }
-  if (data.active !== undefined) { updateData.isActive = Boolean(data.active); delete updateData.active; }
-  if (data.category !== undefined) { updateData.category = { connect: { slug: data.category } }; delete updateData.category; }
+  if (data.nameFa !== undefined) {
+    updateData.nameFA = data.nameFa;
+    delete updateData.nameFa;
+  }
+  if (data.nameEn !== undefined) {
+    updateData.nameEN = data.nameEn;
+    delete updateData.nameEn;
+  }
+  if (data.descriptionFa !== undefined) {
+    updateData.descriptionFA = data.descriptionFa;
+    delete updateData.descriptionFa;
+  }
+  if (data.descriptionEn !== undefined) {
+    updateData.descriptionEN = data.descriptionEn;
+    delete updateData.descriptionEn;
+  }
+  if (data.featured !== undefined) {
+    updateData.isFeatured = Boolean(data.featured);
+    delete updateData.featured;
+  }
+  if (data.isBestSeller !== undefined) {
+    updateData.isBestSeller = Boolean(data.isBestSeller);
+    delete updateData.isBestSeller;
+  }
+  if (data.active !== undefined) {
+    updateData.isActive = Boolean(data.active);
+    delete updateData.active;
+  }
+  if (data.category !== undefined) {
+    updateData.category = { connect: { slug: data.category } };
+    delete updateData.category;
+  }
   if (data.stock !== undefined) updateData.stock = Number(data.stock);
   if (data.price !== undefined) updateData.price = Number(data.price);
-  if (data.comparePrice !== undefined) updateData.comparePrice = Number(data.comparePrice);
+  if (data.comparePrice !== undefined)
+    updateData.comparePrice = Number(data.comparePrice);
   if (data.tagsFA !== undefined) updateData.tagsFA = data.tagsFA;
   if (data.tagsEN !== undefined) updateData.tagsEN = data.tagsEN;
-  
+
   // Handle images - replace all
   if (data.images !== undefined && Array.isArray(data.images)) {
     updateData.images = {
       deleteMany: {},
-      create: data.images.map((url: string, i: number) => ({ url, sortOrder: i })),
+      create: data.images.map((url: string, i: number) => ({
+        url,
+        sortOrder: i,
+      })),
     };
   }
-  
+
   // Handle variants - replace all
   if (data.variants !== undefined && Array.isArray(data.variants)) {
     updateData.variants = {
@@ -391,15 +506,19 @@ export async function updateProduct(id: string, data: any) {
       create: data.variants.map((v: any) => ({ label: v.name, stock: 0 })),
     };
   }
-  
+
   // Handle colors - replace all
   if (data.colorOptions !== undefined && Array.isArray(data.colorOptions)) {
     updateData.colorOptions = {
       deleteMany: {},
-      create: data.colorOptions.map((c: any) => ({ hex: c.hex, nameFA: c.name, sortOrder: 0 })),
+      create: data.colorOptions.map((c: any) => ({
+        hex: c.hex,
+        nameFA: c.name,
+        sortOrder: 0,
+      })),
     };
   }
-  
+
   return prisma.product.update({ where: { id }, data: updateData });
 }
 
@@ -412,7 +531,10 @@ export async function deactivateProduct(id: string) {
 export async function scheduleSession(sessionId: string, scheduledAt: string) {
   const session = await prisma.mentorshipSession.update({
     where: { id: sessionId },
-    data: { scheduledAt: new Date(scheduledAt), status: BookingStatus.SCHEDULED },
+    data: {
+      scheduledAt: new Date(scheduledAt),
+      status: BookingStatus.SCHEDULED,
+    },
   });
 
   await prisma.notification.create({
@@ -420,7 +542,9 @@ export async function scheduleSession(sessionId: string, scheduledAt: string) {
       userId: session.userId,
       type: NotificationType.MENTORSHIP_REMINDER,
       titleFA: "زمان جلسه منتورشیپ تعیین شد",
-      bodyFA: `جلسه منتورشیپ شما برای ${new Date(scheduledAt).toLocaleString("fa-IR")} برنامه‌ریزی شد.`,
+      bodyFA: `جلسه منتورشیپ شما برای ${new Date(scheduledAt).toLocaleString(
+        "fa-IR",
+      )} برنامه‌ریزی شد.`,
       data: { sessionId: session.id },
     },
   });
@@ -431,7 +555,16 @@ export async function scheduleSession(sessionId: string, scheduledAt: string) {
 // ── Product (single) ──────────────────────────────
 
 export async function getProductById(id: string) {
-  const product = await prisma.product.findUnique({ where: { id }, include: { images: true, attributes: true, variants: true, colorOptions: true, category: true } });
+  const product = await prisma.product.findUnique({
+    where: { id },
+    include: {
+      images: true,
+      attributes: true,
+      variants: true,
+      colorOptions: true,
+      category: true,
+    },
+  });
   if (!product) throw new AppError("Product not found", 404);
   return {
     ...product,
@@ -441,9 +574,26 @@ export async function getProductById(id: string) {
     descriptionEn: product.descriptionEN,
     category: product.category?.slug ?? null,
     images: product.images?.map((img: any) => img.url) ?? [],
-    variants: product.variants?.map((v: any) => ({ id: v.id, name: v.label, value: v.label, sortOrder: 0 })) ?? [],
-    colorOptions: product.colorOptions?.map((c: any) => ({ id: c.id, name: c.nameFA, hex: c.hex, sortOrder: c.sortOrder })) ?? [],
-    attributes: product.attributes?.map((a: any) => ({ id: a.id, name: a.name, value: a.value })) ?? [],
+    variants:
+      product.variants?.map((v: any) => ({
+        id: v.id,
+        name: v.label,
+        value: v.label,
+        sortOrder: 0,
+      })) ?? [],
+    colorOptions:
+      product.colorOptions?.map((c: any) => ({
+        id: c.id,
+        name: c.nameFA,
+        hex: c.hex,
+        sortOrder: c.sortOrder,
+      })) ?? [],
+    attributes:
+      product.attributes?.map((a: any) => ({
+        id: a.id,
+        name: a.name,
+        value: a.value,
+      })) ?? [],
     active: product.isActive,
     featured: product.isFeatured,
     isBestSeller: product.isBestSeller,
@@ -459,7 +609,11 @@ export async function getProductById(id: string) {
 export async function getOrderById(id: string) {
   const order = await prisma.order.findUnique({
     where: { id },
-    include: { user: { select: { id: true, nameFA: true, phone: true, email: true } }, items: true, receipt: true },
+    include: {
+      user: { select: { id: true, nameFA: true, phone: true, email: true } },
+      items: true,
+      receipt: true,
+    },
   });
   if (!order) throw new AppError("Order not found", 404);
   return order;
@@ -472,25 +626,41 @@ export async function getMessages(page: number, limit: number, read?: boolean) {
   if (read !== undefined) where.isRead = read;
 
   const [messages, total] = await Promise.all([
-    prisma.tourEnquiry.findMany({ where, orderBy: { createdAt: "desc" }, skip: (page - 1) * limit, take: limit }),
+    prisma.tourEnquiry.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
     prisma.tourEnquiry.count({ where }),
   ]);
   return { messages, total };
 }
 
 export async function getMessageById(id: string) {
-  const message = await prisma.tourEnquiry.findUnique({ where: { id }, include: { tour: { select: { titleFA: true, destination: true } } } });
+  const message = await prisma.tourEnquiry.findUnique({
+    where: { id },
+    include: { tour: { select: { titleFA: true, destination: true } } },
+  });
   if (!message) throw new AppError("Message not found", 404);
   return message;
 }
 
 export async function markMessageAsRead(id: string) {
-  return prisma.tourEnquiry.update({ where: { id }, data: { status: TourEnquiryStatus.CONTACTED } });
+  return prisma.tourEnquiry.update({
+    where: { id },
+    data: { status: TourEnquiryStatus.CONTACTED },
+  });
 }
 
 // ── CMS ─────────────────────────────────────────────
 
-export async function getArticles(page: number, limit: number, category?: string, published?: boolean) {
+export async function getArticles(
+  page: number,
+  limit: number,
+  category?: string,
+  published?: boolean,
+) {
   const where: any = {};
   if (category) where.categoryFA = category;
   if (published !== undefined) where.isPublished = published;
@@ -504,10 +674,10 @@ export async function getArticles(page: number, limit: number, category?: string
     }),
     prisma.article.count({ where }),
   ]);
-  
+
   // Transform field names to match frontend expectations
-  return { 
-    articles: articles.map(a => ({
+  return {
+    articles: articles.map((a) => ({
       ...a,
       title: a.titleFA,
       category: a.categoryFA,
@@ -516,7 +686,7 @@ export async function getArticles(page: number, limit: number, category?: string
       author: a.authorFA,
       published: a.isPublished,
     })),
-    total 
+    total,
   };
 }
 
@@ -537,7 +707,7 @@ export async function getArticleById(id: string) {
 export async function createArticle(data: any) {
   const { generateSlug } = await import("../../utils/slug");
   const articleData: any = {};
-  
+
   // Map frontend field names to database field names
   if (data.title) articleData.titleFA = data.title;
   if (data.titleFA) articleData.titleFA = data.titleFA;
@@ -550,14 +720,18 @@ export async function createArticle(data: any) {
   if (data.category) articleData.categoryFA = data.category;
   if (data.categoryFA) articleData.categoryFA = data.categoryFA;
   if (data.image !== undefined) articleData.image = data.image;
-  if (data.readMinutes !== undefined) articleData.readMinutes = data.readMinutes;
+  if (data.readMinutes !== undefined)
+    articleData.readMinutes = data.readMinutes;
   if (data.isFeatured !== undefined) articleData.isFeatured = data.isFeatured;
-  if (data.isPublished !== undefined) articleData.isPublished = data.isPublished;
+  if (data.isPublished !== undefined)
+    articleData.isPublished = data.isPublished;
   if (data.published !== undefined) articleData.isPublished = data.published;
-  if (data.publishedAt !== undefined) articleData.publishedAt = data.publishedAt;
-  
-  articleData.slug = data.slug || generateSlug(articleData.titleFA || data.titleFA);
-  
+  if (data.publishedAt !== undefined)
+    articleData.publishedAt = data.publishedAt;
+
+  articleData.slug =
+    data.slug || generateSlug(articleData.titleFA || data.titleFA);
+
   const article = await prisma.article.create({ data: articleData });
   return {
     ...article,
@@ -572,7 +746,7 @@ export async function createArticle(data: any) {
 
 export async function updateArticle(id: string, data: any) {
   const articleData: any = {};
-  
+
   // Map frontend field names to database field names
   if (data.title !== undefined) articleData.titleFA = data.title;
   if (data.titleFA !== undefined) articleData.titleFA = data.titleFA;
@@ -585,12 +759,18 @@ export async function updateArticle(id: string, data: any) {
   if (data.category !== undefined) articleData.categoryFA = data.category;
   if (data.categoryFA !== undefined) articleData.categoryFA = data.categoryFA;
   if (data.image !== undefined) articleData.image = data.image;
-  if (data.readMinutes !== undefined) articleData.readMinutes = data.readMinutes;
+  if (data.readMinutes !== undefined)
+    articleData.readMinutes = data.readMinutes;
   if (data.isFeatured !== undefined) articleData.isFeatured = data.isFeatured;
-  if (data.isPublished !== undefined) articleData.isPublished = data.isPublished;
-  if (data.publishedAt !== undefined) articleData.publishedAt = data.publishedAt;
-  
-  const article = await prisma.article.update({ where: { id }, data: articleData });
+  if (data.isPublished !== undefined)
+    articleData.isPublished = data.isPublished;
+  if (data.publishedAt !== undefined)
+    articleData.publishedAt = data.publishedAt;
+
+  const article = await prisma.article.update({
+    where: { id },
+    data: articleData,
+  });
   return {
     ...article,
     title: article.titleFA,
@@ -615,16 +795,17 @@ export async function getBooks(page: number, limit: number) {
     }),
     prisma.book.count(),
   ]);
-  return { 
-    books: books.map(b => ({
+  return {
+    books: books.map((b) => ({
       ...b,
       title: b.titleFA,
       author: b.authorFA,
       description: b.descriptionFA,
       category: b.categoryFA,
       image: b.coverImage,
+      published: b.isPublished,
     })),
-    total 
+    total,
   };
 }
 
@@ -638,13 +819,14 @@ export async function getBookById(id: string) {
     description: book.descriptionFA,
     category: book.categoryFA,
     image: book.coverImage,
+    published: book.isPublished,
   };
 }
 
 export async function createBook(data: any) {
   const { generateSlug } = await import("../../utils/slug");
   const bookData: any = {};
-  
+
   if (data.title) bookData.titleFA = data.title;
   if (data.titleFA) bookData.titleFA = data.titleFA;
   if (data.titleEN) bookData.titleEN = data.titleEN;
@@ -661,9 +843,10 @@ export async function createBook(data: any) {
   if (data.pages !== undefined) bookData.pages = data.pages;
   if (data.rating !== undefined) bookData.rating = data.rating;
   if (data.isPublished !== undefined) bookData.isPublished = data.isPublished;
+  if (data.published !== undefined) bookData.isPublished = data.published;
   
   bookData.slug = data.slug || generateSlug(bookData.titleFA || data.titleFA);
-  
+
   const book = await prisma.book.create({ data: bookData });
   return {
     ...book,
@@ -672,12 +855,13 @@ export async function createBook(data: any) {
     description: book.descriptionFA,
     category: book.categoryFA,
     image: book.coverImage,
+    published: book.isPublished,
   };
 }
 
 export async function updateBook(id: string, data: any) {
   const bookData: any = {};
-  
+
   if (data.title !== undefined) bookData.titleFA = data.title;
   if (data.titleFA !== undefined) bookData.titleFA = data.titleFA;
   if (data.titleEN !== undefined) bookData.titleEN = data.titleEN;
@@ -685,7 +869,8 @@ export async function updateBook(id: string, data: any) {
   if (data.authorFA !== undefined) bookData.authorFA = data.authorFA;
   if (data.authorEN !== undefined) bookData.authorEN = data.authorEN;
   if (data.description !== undefined) bookData.descriptionFA = data.description;
-  if (data.descriptionFA !== undefined) bookData.descriptionFA = data.descriptionFA;
+  if (data.descriptionFA !== undefined)
+    bookData.descriptionFA = data.descriptionFA;
   if (data.category !== undefined) bookData.categoryFA = data.category;
   if (data.categoryFA !== undefined) bookData.categoryFA = data.categoryFA;
   if (data.image !== undefined) bookData.coverImage = data.image;
@@ -694,6 +879,7 @@ export async function updateBook(id: string, data: any) {
   if (data.pages !== undefined) bookData.pages = data.pages;
   if (data.rating !== undefined) bookData.rating = data.rating;
   if (data.isPublished !== undefined) bookData.isPublished = data.isPublished;
+  if (data.published !== undefined) bookData.isPublished = data.published;
   
   const book = await prisma.book.update({ where: { id }, data: bookData });
   return {
@@ -703,6 +889,7 @@ export async function updateBook(id: string, data: any) {
     description: book.descriptionFA,
     category: book.categoryFA,
     image: book.coverImage,
+    published: book.isPublished,
   };
 }
 
@@ -719,14 +906,17 @@ export async function getPoems(page: number, limit: number) {
     }),
     prisma.poem.count(),
   ]);
-  return { 
-    poems: poems.map(p => ({
+  return {
+    poems: poems.map((p) => ({
       ...p,
       title: p.titleFA,
       poet: p.poetFA,
       lines: p.linesFA,
+      theme: p.theme,
+      backgroundGradient: p.backgroundGradient,
+      published: p.isPublished,
     })),
-    total 
+    total,
   };
 }
 
@@ -738,13 +928,16 @@ export async function getPoemById(id: string) {
     title: poem.titleFA,
     poet: poem.poetFA,
     lines: poem.linesFA,
+    theme: poem.theme,
+    backgroundGradient: poem.backgroundGradient,
+    published: poem.isPublished,
   };
 }
 
 export async function createPoem(data: any) {
   const { generateSlug } = await import("../../utils/slug");
   const poemData: any = {};
-  
+
   if (data.title) poemData.titleFA = data.title;
   if (data.titleFA) poemData.titleFA = data.titleFA;
   if (data.poet) poemData.poetFA = data.poet;
@@ -754,23 +947,26 @@ export async function createPoem(data: any) {
   if (data.lines) poemData.linesFA = data.lines;
   if (data.linesFA) poemData.linesFA = data.linesFA;
   if (data.theme) poemData.theme = data.theme;
-  if (data.backgroundGradient) poemData.backgroundGradient = data.backgroundGradient;
+  if (data.backgroundGradient)
+    poemData.backgroundGradient = data.backgroundGradient;
   if (data.isPublished !== undefined) poemData.isPublished = data.isPublished;
+  if (data.published !== undefined) poemData.isPublished = data.published;
   
   poemData.slug = data.slug || generateSlug(poemData.titleFA || data.titleFA);
-  
+
   const poem = await prisma.poem.create({ data: poemData });
   return {
     ...poem,
     title: poem.titleFA,
     poet: poem.poetFA,
     lines: poem.linesFA,
+    published: poem.isPublished,
   };
 }
 
 export async function updatePoem(id: string, data: any) {
   const poemData: any = {};
-  
+
   if (data.title !== undefined) poemData.titleFA = data.title;
   if (data.titleFA !== undefined) poemData.titleFA = data.titleFA;
   if (data.poet !== undefined) poemData.poetFA = data.poet;
@@ -780,15 +976,18 @@ export async function updatePoem(id: string, data: any) {
   if (data.lines !== undefined) poemData.linesFA = data.lines;
   if (data.linesFA !== undefined) poemData.linesFA = data.linesFA;
   if (data.theme !== undefined) poemData.theme = data.theme;
-  if (data.backgroundGradient !== undefined) poemData.backgroundGradient = data.backgroundGradient;
+  if (data.backgroundGradient !== undefined)
+    poemData.backgroundGradient = data.backgroundGradient;
   if (data.isPublished !== undefined) poemData.isPublished = data.isPublished;
-  
+  if (data.published !== undefined) poemData.isPublished = data.published;
+
   const poem = await prisma.poem.update({ where: { id }, data: poemData });
   return {
     ...poem,
     title: poem.titleFA,
     poet: poem.poetFA,
     lines: poem.linesFA,
+    published: poem.isPublished,
   };
 }
 
@@ -805,16 +1004,17 @@ export async function getEducationalPosts(page: number, limit: number) {
     }),
     prisma.educationalPost.count(),
   ]);
-  return { 
-    posts: posts.map(p => ({
+  return {
+    posts: posts.map((p) => ({
       ...p,
       title: p.titleFA,
       category: p.categoryFA,
       body: p.bodyFA,
       excerpt: p.excerptFA,
       tags: p.tagsFA,
+      published: p.isPublished,
     })),
-    total 
+    total,
   };
 }
 
@@ -828,13 +1028,14 @@ export async function getEducationalPostById(id: string) {
     body: post.bodyFA,
     excerpt: post.excerptFA,
     tags: post.tagsFA,
+    published: post.isPublished,
   };
 }
 
 export async function createEducationalPost(data: any) {
   const { generateSlug } = await import("../../utils/slug");
   const postData: any = {};
-  
+
   if (data.title) postData.titleFA = data.title;
   if (data.titleFA) postData.titleFA = data.titleFA;
   if (data.titleEN) postData.titleEN = data.titleEN;
@@ -852,15 +1053,15 @@ export async function createEducationalPost(data: any) {
   if (data.isPublished !== undefined) postData.isPublished = data.isPublished;
   if (data.publishedAt !== undefined) postData.publishedAt = data.publishedAt;
   if (data.authorId) postData.authorId = data.authorId;
-  
+
   postData.slug = data.slug || generateSlug(postData.titleFA || data.titleFA);
-  
+
   // If authorId is not provided, use a default admin
   if (!postData.authorId) {
     const admin = await prisma.user.findFirst({ where: { role: "ADMIN" } });
-    postData.authorId = admin?.id || '';
+    postData.authorId = admin?.id || "";
   }
-  
+
   const post = await prisma.educationalPost.create({ data: postData });
   return {
     ...post,
@@ -869,12 +1070,13 @@ export async function createEducationalPost(data: any) {
     body: post.bodyFA,
     excerpt: post.excerptFA,
     tags: post.tagsFA,
+    published: post.isPublished,
   };
 }
 
 export async function updateEducationalPost(id: string, data: any) {
   const postData: any = {};
-  
+
   if (data.title !== undefined) postData.titleFA = data.title;
   if (data.titleFA !== undefined) postData.titleFA = data.titleFA;
   if (data.titleEN !== undefined) postData.titleEN = data.titleEN;
@@ -890,9 +1092,13 @@ export async function updateEducationalPost(id: string, data: any) {
   if (data.tagsFA !== undefined) postData.tagsFA = data.tagsFA;
   if (data.readMinutes !== undefined) postData.readMinutes = data.readMinutes;
   if (data.isPublished !== undefined) postData.isPublished = data.isPublished;
+  if (data.published !== undefined) postData.isPublished = data.published;
   if (data.publishedAt !== undefined) postData.publishedAt = data.publishedAt;
-  
-  const post = await prisma.educationalPost.update({ where: { id }, data: postData });
+
+  const post = await prisma.educationalPost.update({
+    where: { id },
+    data: postData,
+  });
   return {
     ...post,
     title: post.titleFA,
@@ -900,6 +1106,7 @@ export async function updateEducationalPost(id: string, data: any) {
     body: post.bodyFA,
     excerpt: post.excerptFA,
     tags: post.tagsFA,
+    published: post.isPublished,
   };
 }
 
@@ -909,14 +1116,25 @@ export async function deleteEducationalPost(id: string) {
 
 // ── Courses (admin) ──────────────────────────────
 
-export async function getAdminCourses(page: number, limit: number, search?: string) {
+export async function getAdminCourses(
+  page: number,
+  limit: number,
+  search?: string,
+) {
   const where: any = {};
-  if (search) where.OR = [{ nameFA: { contains: search } }, { nameEN: { contains: search } }];
+  if (search)
+    where.OR = [
+      { nameFA: { contains: search } },
+      { nameEN: { contains: search } },
+    ];
 
   const [courses, total] = await Promise.all([
     prisma.course.findMany({
       where,
-      include: { category: true, instructor: { select: { id: true, nameFA: true } } },
+      include: {
+        category: true,
+        instructor: { select: { id: true, nameFA: true } },
+      },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * limit,
       take: limit,
@@ -939,7 +1157,10 @@ export async function getAdminCourses(page: number, limit: number, search?: stri
 export async function getAdminCourseById(id: string) {
   const course = await prisma.course.findUnique({
     where: { id },
-    include: { category: true, instructor: { select: { id: true, nameFA: true } } },
+    include: {
+      category: true,
+      instructor: { select: { id: true, nameFA: true } },
+    },
   });
   if (!course) throw new AppError("Course not found", 404);
   return {
@@ -1001,23 +1222,34 @@ export async function updateCourse(id: string, data: any) {
   if (data.nameFA !== undefined) courseData.nameFA = data.nameFA;
   if (data.titleEn !== undefined) courseData.nameEN = data.titleEn;
   if (data.nameEN !== undefined) courseData.nameEN = data.nameEN;
-  if (data.descriptionFa !== undefined) courseData.descriptionFA = data.descriptionFa;
-  if (data.descriptionFA !== undefined) courseData.descriptionFA = data.descriptionFA;
-  if (data.descriptionEn !== undefined) courseData.descriptionEN = data.descriptionEn;
-  if (data.descriptionEN !== undefined) courseData.descriptionEN = data.descriptionEN;
+  if (data.descriptionFa !== undefined)
+    courseData.descriptionFA = data.descriptionFa;
+  if (data.descriptionFA !== undefined)
+    courseData.descriptionFA = data.descriptionFA;
+  if (data.descriptionEn !== undefined)
+    courseData.descriptionEN = data.descriptionEn;
+  if (data.descriptionEN !== undefined)
+    courseData.descriptionEN = data.descriptionEN;
   if (data.price !== undefined) courseData.price = Number(data.price);
   if (data.duration !== undefined) courseData.duration = data.duration;
-  if (data.durationWeeks !== undefined) courseData.durationWeeks = Number(data.durationWeeks);
+  if (data.durationWeeks !== undefined)
+    courseData.durationWeeks = Number(data.durationWeeks);
   if (data.lessons !== undefined) courseData.lessons = Number(data.lessons);
-  if (data.certificate !== undefined) courseData.certificate = Boolean(data.certificate);
+  if (data.certificate !== undefined)
+    courseData.certificate = Boolean(data.certificate);
   if (data.active !== undefined) courseData.isActive = Boolean(data.active);
-  if (data.featured !== undefined) courseData.isFeatured = Boolean(data.featured);
+  if (data.featured !== undefined)
+    courseData.isFeatured = Boolean(data.featured);
   if (data.image !== undefined) courseData.heroImage = data.image;
   if (data.heroImage !== undefined) courseData.heroImage = data.heroImage;
   if (data.categoryId !== undefined) courseData.categoryId = data.categoryId;
-  if (data.instructorId !== undefined) courseData.instructorId = data.instructorId;
+  if (data.instructorId !== undefined)
+    courseData.instructorId = data.instructorId;
 
-  const course = await prisma.course.update({ where: { id }, data: courseData });
+  const course = await prisma.course.update({
+    where: { id },
+    data: courseData,
+  });
   return {
     ...course,
     titleFa: course.nameFA,
@@ -1034,14 +1266,25 @@ export async function deleteCourse(id: string) {
 
 // ── Tours (admin) ────────────────────────────────
 
-export async function getAdminTours(page: number, limit: number, search?: string) {
+export async function getAdminTours(
+  page: number,
+  limit: number,
+  search?: string,
+) {
   const where: any = {};
-  if (search) where.OR = [{ titleFA: { contains: search } }, { titleEN: { contains: search } }];
+  if (search)
+    where.OR = [
+      { titleFA: { contains: search } },
+      { titleEN: { contains: search } },
+    ];
 
   const [tours, total] = await Promise.all([
     prisma.tour.findMany({
       where,
-      include: { category: true, images: { orderBy: { sortOrder: "asc" }, take: 1 } },
+      include: {
+        category: true,
+        images: { orderBy: { sortOrder: "asc" }, take: 1 },
+      },
       orderBy: { startDate: "asc" },
       skip: (page - 1) * limit,
       take: limit,
@@ -1058,8 +1301,8 @@ export async function getAdminTours(page: number, limit: number, search?: string
     price: t.price,
     destination: t.destination,
     dateRange: t.dateRange,
-    startDate: t.startDate?.toISOString().split('T')[0] || "",
-    endDate: t.endDate?.toISOString().split('T')[0] || "",
+    startDate: t.startDate?.toISOString().split("T")[0] || "",
+    endDate: t.endDate?.toISOString().split("T")[0] || "",
     durationDays: t.durationDays,
     duration: `${t.durationDays} days`,
     image: t.images?.[0]?.url ?? t.heroImage ?? null,
@@ -1077,7 +1320,10 @@ export async function getAdminTours(page: number, limit: number, search?: string
 export async function getAdminTourById(id: string) {
   const tour = await prisma.tour.findUnique({
     where: { id },
-    include: { category: true, images: { orderBy: { sortOrder: "asc" }, take: 1 } },
+    include: {
+      category: true,
+      images: { orderBy: { sortOrder: "asc" }, take: 1 },
+    },
   });
   if (!tour) throw new AppError("Tour not found", 404);
   return {
@@ -1140,17 +1386,23 @@ export async function updateTour(id: string, data: any) {
   if (data.nameFA !== undefined) tourData.titleFA = data.nameFA;
   if (data.titleEn !== undefined) tourData.titleEN = data.titleEn;
   if (data.nameEN !== undefined) tourData.titleEN = data.nameEN;
-  if (data.descriptionFa !== undefined) tourData.descriptionFA = data.descriptionFa;
-  if (data.descriptionFA !== undefined) tourData.descriptionFA = data.descriptionFA;
-  if (data.descriptionEn !== undefined) tourData.descriptionEN = data.descriptionEn;
-  if (data.descriptionEN !== undefined) tourData.descriptionEN = data.descriptionEN;
+  if (data.descriptionFa !== undefined)
+    tourData.descriptionFA = data.descriptionFa;
+  if (data.descriptionFA !== undefined)
+    tourData.descriptionFA = data.descriptionFA;
+  if (data.descriptionEn !== undefined)
+    tourData.descriptionEN = data.descriptionEn;
+  if (data.descriptionEN !== undefined)
+    tourData.descriptionEN = data.descriptionEN;
   if (data.price !== undefined) tourData.price = Number(data.price);
   if (data.destination !== undefined) tourData.destination = data.destination;
   if (data.location !== undefined) tourData.destination = data.location;
   if (data.dateRange !== undefined) tourData.dateRange = data.dateRange;
-  if (data.startDate !== undefined) tourData.startDate = new Date(data.startDate);
+  if (data.startDate !== undefined)
+    tourData.startDate = new Date(data.startDate);
   if (data.endDate !== undefined) tourData.endDate = new Date(data.endDate);
-  if (data.durationDays !== undefined) tourData.durationDays = Number(data.durationDays);
+  if (data.durationDays !== undefined)
+    tourData.durationDays = Number(data.durationDays);
   if (data.maxCapacity !== undefined) {
     tourData.spotsTotal = Number(data.maxCapacity);
     tourData.spotsLeft = Number(data.maxCapacity);
