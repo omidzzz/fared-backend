@@ -2,6 +2,14 @@ import prisma from "../../config/database";
 import { AppError } from "../../middleware/errorHandler";
 import { generateSlug } from "../../utils/slug";
 
+// Helper function to unescape HTML entities
+function unescapeHtml(html: string): string {
+  return html
+    .replace(new RegExp(String.fromCharCode(38) + "lt;", "g"), "<")
+    .replace(new RegExp(String.fromCharCode(38) + "gt;", "g"), ">")
+    .replace(new RegExp(String.fromCharCode(38) + "amp;", "g"), "&");
+}
+
 // ── Educational Posts ───────────────────────────────
 
 export async function getEducationalPosts() {
@@ -18,7 +26,7 @@ export async function getEducationalPostBySlug(slug: string) {
     ...post,
     titleFA: post.titleFA,
     categoryFA: post.categoryFA,
-    bodyFA: post.bodyFA,
+    bodyFA: unescapeHtml(post.bodyFA),
     excerptFA: post.excerptFA,
     tagsFA: post.tagsFA,
     published: post.isPublished,
@@ -85,7 +93,7 @@ export async function getArticleBySlug(slug: string) {
     titleFA: article.titleFA,
     categoryFA: article.categoryFA,
     excerptFA: article.excerptFA,
-    bodyFA: article.bodyFA,
+    bodyFA: unescapeHtml(article.bodyFA),
     authorFA: article.authorFA,
     published: article.isPublished,
   };

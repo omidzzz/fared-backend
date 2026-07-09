@@ -694,13 +694,19 @@ export async function getArticleById(id: string) {
   const article = await prisma.article.findUnique({ where: { id } });
   if (!article) throw new AppError("Article not found", 404);
   return {
-    ...article,
+    id: article.id,
     title: article.titleFA,
+    slug: article.slug,
     category: article.categoryFA,
     excerpt: article.excerptFA,
     body: article.bodyFA,
     author: article.authorFA,
+    image: article.image,
+    readMinutes: article.readMinutes,
+    isFeatured: article.isFeatured,
     published: article.isPublished,
+    publishedAt: article.publishedAt,
+    createdAt: article.createdAt,
   };
 }
 
@@ -813,13 +819,18 @@ export async function getBookById(id: string) {
   const book = await prisma.book.findUnique({ where: { id } });
   if (!book) throw new AppError("Book not found", 404);
   return {
-    ...book,
+    id: book.id,
     title: book.titleFA,
+    slug: book.slug,
     author: book.authorFA,
     description: book.descriptionFA,
     category: book.categoryFA,
     image: book.coverImage,
+    year: book.year,
+    pages: book.pages,
+    rating: book.rating,
     published: book.isPublished,
+    createdAt: book.createdAt,
   };
 }
 
@@ -924,13 +935,15 @@ export async function getPoemById(id: string) {
   const poem = await prisma.poem.findUnique({ where: { id } });
   if (!poem) throw new AppError("Poem not found", 404);
   return {
-    ...poem,
+    id: poem.id,
     title: poem.titleFA,
+    slug: poem.slug,
     poet: poem.poetFA,
     lines: poem.linesFA,
     theme: poem.theme,
     backgroundGradient: poem.backgroundGradient,
     published: poem.isPublished,
+    createdAt: poem.createdAt,
   };
 }
 
@@ -1022,13 +1035,18 @@ export async function getEducationalPostById(id: string) {
   const post = await prisma.educationalPost.findUnique({ where: { id } });
   if (!post) throw new AppError("Educational post not found", 404);
   return {
-    ...post,
+    id: post.id,
     title: post.titleFA,
+    slug: post.slug,
     category: post.categoryFA,
     body: post.bodyFA,
     excerpt: post.excerptFA,
     tags: post.tagsFA,
+    image: post.image,
+    readMinutes: post.readMinutes,
     published: post.isPublished,
+    publishedAt: post.publishedAt,
+    createdAt: post.createdAt,
   };
 }
 
