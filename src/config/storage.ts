@@ -18,6 +18,9 @@ async function ensureUploadsDir(): Promise<void> {
 /**
  * Upload a file buffer to local disk.
  * Returns the public URL accessible via the backend.
+ * 
+ * On Render (ephemeral filesystem): files are lost on restart.
+ * On Liara VPS: files persist permanently on disk.
  */
 export async function uploadToStorage(
   key: string,

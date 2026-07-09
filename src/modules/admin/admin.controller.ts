@@ -106,8 +106,11 @@ export async function getUsersHandler(req: Request, res: Response, next: NextFun
 export async function getProductsHandler(req: Request, res: Response, next: NextFunction) {
   try {
     const { page, limit } = parsePagination(req.query as any);
-    const { search, category, featured } = req.query;
-    const result = await adminService.getProducts(page, limit, search as string | undefined, category as string | undefined, featured === 'true');
+    const { search, category } = req.query;
+    const featuredParam = req.query.featured;
+    // Only filter by featured if the query param is explicitly provided
+    const featured = featuredParam === undefined ? undefined : featuredParam === 'true';
+    const result = await adminService.getProducts(page, limit, search as string | undefined, category as string | undefined, featured);
     sendPaginated(res, result.products, result.total, page, limit, "products");
   } catch (e) { next(e); }
 }

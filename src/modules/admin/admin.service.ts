@@ -287,14 +287,13 @@ export async function getUsers(page: number, limit: number) {
 export async function getProducts(page: number, limit: number, search?: string, category?: string, featured?: boolean) {
   const where: any = {};
   if (search) where.OR = [{ nameFA: { contains: search } }, { nameEN: { contains: search } }];
-  // Filter by type (stones, candles, accessories, clothes) instead of category.slug
-  if (category) where.type = category;
+  if (category) where.category = { slug: category };
   if (featured !== undefined) where.isFeatured = featured;
 
   const [products, total] = await Promise.all([
     prisma.product.findMany({
       where,
-      include: { category: true },
+      include: { category: true, images: { orderBy: { sortOrder: "asc" } } },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * limit,
       take: limit,
@@ -302,7 +301,7 @@ export async function getProducts(page: number, limit: number, search?: string, 
     prisma.product.count({ where }),
   ]);
 
-  // Normalize fields for the admin frontend (nameFA, category as slug string)
+  // Normalize fields for the admin frontend
   const normalized = products.map((p) => ({
     ...p,
     nameFa: p.nameFA,
@@ -311,6 +310,7 @@ export async function getProducts(page: number, limit: number, search?: string, 
     featured: p.isFeatured,
     isBestSeller: p.isBestSeller,
     active: p.isActive,
+    images: p.images?.map((img: any) => img.url) ?? [],
   }));
 
   return { products: normalized, total };
