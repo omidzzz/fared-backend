@@ -15,6 +15,7 @@ export async function getCandlesHandler(
       limit: query.limit,
       search: query.search,
       featured: query.featured === "true",
+      property: query.property,
     });
     sendSuccess(res, result);
   } catch (error) {

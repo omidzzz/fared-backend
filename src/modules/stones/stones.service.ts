@@ -64,12 +64,10 @@ export async function getStones(filters?: { page?: number; limit?: number; searc
 
   return {
     products: products.map(formatProduct),
-    pagination: {
-      total,
-      page: filters?.page || 1,
-      limit: filters?.limit || 12,
-      totalPages: Math.ceil(total / (filters?.limit || 12)),
-    },
+    total,
+    page: filters?.page || 1,
+    limit: filters?.limit || 12,
+    totalPages: Math.ceil(total / (filters?.limit || 12)),
   };
 }
 

@@ -8,11 +8,16 @@ export async function getProducts(filters: {
   featured?: string;
   bestseller?: string;
   search?: string;
+  property?: string;
+  size?: string;
+  color?: string;
+  type?: string;
 }) {
-  const { page, limit, category, featured, bestseller, search } = filters;
+  const { page, limit, category, featured, bestseller, search, property, size, color, type } = filters;
 
   const where: any = { isActive: true };
   if (category) where.category = { slug: category };
+  if (type) where.type = type;
   if (featured === "true") where.isFeatured = true;
   if (bestseller === "true") where.isBestSeller = true;
   if (search) {
@@ -21,6 +26,31 @@ export async function getProducts(filters: {
       { nameEN: { contains: search, mode: "insensitive" } },
       { descriptionFA: { contains: search, mode: "insensitive" } },
     ];
+  }
+  if (property) {
+    where.attributes = {
+      some: {
+        key: "tagsEN",
+        valueEN: { contains: property, mode: "insensitive" },
+      },
+    };
+  }
+  if (size) {
+    where.variants = {
+      some: {
+        label: { equals: size, mode: "insensitive" },
+      },
+    };
+  }
+  if (color) {
+    where.colorOptions = {
+      some: {
+        OR: [
+          { nameFA: { contains: color, mode: "insensitive" } },
+          { nameEN: { contains: color, mode: "insensitive" } },
+        ],
+      },
+    };
   }
 
   const [products, total] = await Promise.all([

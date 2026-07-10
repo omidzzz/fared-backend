@@ -29,6 +29,7 @@ export async function getAccessories(filters?: {
   limit?: number;
   search?: string;
   featured?: boolean;
+  property?: string;
 }) {
   const where: any = { type: "accessories", isActive: true };
 
@@ -43,6 +44,18 @@ export async function getAccessories(filters?: {
     where.isFeatured = filters.featured;
   }
 
+  if (filters?.property) {
+    where.attributes = {
+      some: {
+        key: "tagsEN",
+        valueEN: { contains: filters.property, mode: "insensitive" },
+      },
+    };
+  }
+
+  const page = filters?.page || 1;
+  const limit = filters?.limit || 12;
+
   const [products, total] = await Promise.all([
     prisma.product.findMany({
       where,
@@ -52,20 +65,18 @@ export async function getAccessories(filters?: {
         category: true,
       },
       orderBy: { createdAt: "desc" },
-      skip: ((filters?.page || 1) - 1) * (filters?.limit || 12),
-      take: filters?.limit || 12,
+      skip: (page - 1) * limit,
+      take: limit,
     }),
     prisma.product.count({ where }),
   ]);
 
   return {
     products: products.map(formatProduct),
-    pagination: {
-      total,
-      page: filters?.page || 1,
-      limit: filters?.limit || 12,
-      totalPages: Math.ceil(total / (filters?.limit || 12)),
-    },
+    total,
+    page,
+    limit,
+    totalPages: Math.ceil(total / limit),
   };
 }
 

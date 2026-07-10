@@ -5,4 +5,5 @@ export const queryAccessorySchema = z.object({
   limit: z.coerce.number().int().min(1).max(100).optional(),
   search: z.string().optional(),
   featured: z.enum(["true", "false"]).optional(),
+  property: z.string().optional(),
 });
