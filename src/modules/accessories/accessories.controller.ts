@@ -1,15 +1,22 @@
 import { Request, Response, NextFunction } from "express";
 import { sendSuccess } from "../../utils/response";
 import * as accessoriesService from "./accessories.service";
+import { queryAccessorySchema } from "./accessories.schema";
 
 export async function getAccessoriesHandler(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {
   try {
-    const products = await accessoriesService.getAccessories();
-    sendSuccess(res, products);
+    const query = queryAccessorySchema.parse(req.query);
+    const result = await accessoriesService.getAccessories({
+      page: query.page,
+      limit: query.limit,
+      search: query.search,
+      featured: query.featured === "true",
+    });
+    sendSuccess(res, result);
   } catch (error) {
     next(error);
   }

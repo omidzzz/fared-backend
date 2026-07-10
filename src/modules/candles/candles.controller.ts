@@ -1,15 +1,22 @@
 import { Request, Response, NextFunction } from "express";
 import { sendSuccess } from "../../utils/response";
 import * as candlesService from "./candles.service";
+import { queryCandleSchema } from "./candles.schema";
 
 export async function getCandlesHandler(
-  _req: Request,
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {
   try {
-    const products = await candlesService.getCandles();
-    sendSuccess(res, products);
+    const query = queryCandleSchema.parse(req.query);
+    const result = await candlesService.getCandles({
+      page: query.page,
+      limit: query.limit,
+      search: query.search,
+      featured: query.featured === "true",
+    });
+    sendSuccess(res, result);
   } catch (error) {
     next(error);
   }
