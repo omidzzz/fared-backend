@@ -552,93 +552,123 @@ export async function scheduleSession(sessionId: string, scheduledAt: string) {
   return session;
 }
 
-// ── Mentorship Sessions (Admin) ───────────────────
+// ── Mentors / Session Types (Admin) ──────────────
 
 export async function getAdminSessions(page: number, limit: number, search?: string) {
   const where: any = {};
   if (search) {
     where.OR = [
-      { user: { nameFA: { contains: search } } },
-      { user: { phone: { contains: search } } },
-      { mentor: { nameFA: { contains: search } } },
+      { nameFA: { contains: search } },
+      { nameEN: { contains: search } },
     ];
   }
 
   const [sessions, total] = await Promise.all([
-    prisma.mentorshipSession.findMany({
+    prisma.mentor.findMany({
       where,
       include: {
-        user: { select: { id: true, nameFA: true, phone: true, email: true } },
-        mentor: { select: { id: true, nameFA: true, nameEN: true } },
-        order: { select: { id: true, orderNumber: true, paymentStatus: true, total: true } },
+        user: { select: { id: true, avatar: true } },
       },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * limit,
       take: limit,
     }),
-    prisma.mentorshipSession.count({ where }),
+    prisma.mentor.count({ where }),
   ]);
 
-  return { sessions, total };
+  // Map to frontend Session type: { id, name, description, duration, price, active }
+  const mapped = sessions.map((s) => ({
+    id: s.id,
+    name: s.nameFA,
+    description: s.bioFA,
+    duration: s.sessionDuration,
+    price: s.sessionPrice,
+    active: s.isAvailable,
+    currency: s.currency,
+    nameEN: s.nameEN,
+  }));
+
+  return { sessions: mapped, total };
 }
 
 export async function getAdminSessionById(id: string) {
-  const session = await prisma.mentorshipSession.findUnique({
+  const session = await prisma.mentor.findUnique({
     where: { id },
-    include: {
-      user: { select: { id: true, nameFA: true, phone: true, email: true } },
-      mentor: { select: { id: true, nameFA: true, nameEN: true, bioFA: true } },
-      order: true,
-    },
+    include: { user: { select: { id: true, avatar: true } } },
   });
   if (!session) throw new AppError("Session not found", 404);
-  return session;
+  return {
+    id: session.id,
+    name: session.nameFA,
+    description: session.bioFA,
+    duration: session.sessionDuration,
+    price: session.sessionPrice,
+    active: session.isAvailable,
+    currency: session.currency,
+    nameEN: session.nameEN,
+  };
 }
 
 export async function createAdminSession(data: any) {
-  const { userId, mentorId, notes, scheduledAt } = data;
-
-  const session = await prisma.mentorshipSession.create({
+  // Frontend sends: { name, description, duration, price, active }
+  // Map to Mentor model fields
+  const mentor = await prisma.mentor.create({
     data: {
-      userId,
-      mentorId,
-      notes: notes ?? null,
-      scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
-      status: scheduledAt ? BookingStatus.SCHEDULED : BookingStatus.PENDING,
-    },
-    include: {
-      user: { select: { id: true, nameFA: true, phone: true } },
-      mentor: { select: { id: true, nameFA: true } },
+      nameFA: data.name,
+      nameEN: data.nameEN || null,
+      titleFA: data.name || "",
+      titleEN: data.nameEN || null,
+      bioFA: data.description || "",
+      bioEN: null,
+      specialtiesFA: [],
+      specialtiesEN: [],
+      sessionDuration: Number(data.duration) || 60,
+      sessionPrice: Number(data.price) || 0,
+      currency: data.currency || "IRT",
+      isAvailable: data.active !== undefined ? Boolean(data.active) : true,
+      userId: data.userId || (await getDefaultAdminUserId()),
     },
   });
 
-  return session;
+  return {
+    id: mentor.id,
+    name: mentor.nameFA,
+    description: mentor.bioFA,
+    duration: mentor.sessionDuration,
+    price: mentor.sessionPrice,
+    active: mentor.isAvailable,
+    currency: mentor.currency,
+  };
 }
 
 export async function updateAdminSession(id: string, data: any) {
-  const updateData: any = { ...data };
-  if (data.scheduledAt) {
-    updateData.scheduledAt = new Date(data.scheduledAt);
-    if (!updateData.status) updateData.status = BookingStatus.SCHEDULED;
-  }
-  if (data.status) {
-    updateData.status = data.status as BookingStatus;
-  }
+  const updateData: any = {};
+  if (data.name !== undefined) updateData.nameFA = data.name;
+  if (data.nameEN !== undefined) updateData.nameEN = data.nameEN;
+  if (data.description !== undefined) updateData.bioFA = data.description;
+  if (data.duration !== undefined) updateData.sessionDuration = Number(data.duration);
+  if (data.price !== undefined) updateData.sessionPrice = Number(data.price);
+  if (data.currency !== undefined) updateData.currency = data.currency;
+  if (data.active !== undefined) updateData.isAvailable = Boolean(data.active);
 
-  const session = await prisma.mentorshipSession.update({
+  const mentor = await prisma.mentor.update({
     where: { id },
     data: updateData,
-    include: {
-      user: { select: { id: true, nameFA: true, phone: true } },
-      mentor: { select: { id: true, nameFA: true } },
-    },
   });
 
-  return session;
+  return {
+    id: mentor.id,
+    name: mentor.nameFA,
+    description: mentor.bioFA,
+    duration: mentor.sessionDuration,
+    price: mentor.sessionPrice,
+    active: mentor.isAvailable,
+    currency: mentor.currency,
+  };
 }
 
 export async function deleteAdminSession(id: string) {
-  return prisma.mentorshipSession.delete({ where: { id } });
+  return prisma.mentor.delete({ where: { id } });
 }
 
 // ── Bookings (Admin) ──────────────────────────────
@@ -662,7 +692,17 @@ export async function getAdminBookings(page: number, limit: number, status?: str
     prisma.mentorshipSession.count({ where }),
   ]);
 
-  return { bookings, total };
+  // Map to frontend Booking type: { id, customerName, sessionName, date, status }
+  const mapped = bookings.map((b) => ({
+    id: b.id,
+    customerName: b.user?.nameFA || "",
+    sessionName: b.mentor?.nameFA || "",
+    date: b.scheduledAt?.toISOString() || b.createdAt.toISOString(),
+    status: b.status,
+    createdAt: b.createdAt,
+  }));
+
+  return { bookings: mapped, total };
 }
 
 export async function updateAdminBookingStatus(id: string, status: string) {
@@ -707,7 +747,13 @@ export async function updateAdminBookingStatus(id: string, status: string) {
     },
   });
 
-  return session;
+  return {
+    id: session.id,
+    customerName: session.user?.nameFA || "",
+    sessionName: session.mentor?.nameFA || "",
+    date: session.scheduledAt?.toISOString() || session.createdAt.toISOString(),
+    status: session.status,
+  };
 }
 
 // ── Product (single) ──────────────────────────────
@@ -1616,4 +1662,11 @@ async function getDefaultInstructorId(): Promise<string> {
     where: { role: { in: ["INSTRUCTOR", "ADMIN", "SUPER_ADMIN"] } },
   });
   return instructor?.id || "";
+}
+
+async function getDefaultAdminUserId(): Promise<string> {
+  const admin = await prisma.user.findFirst({
+    where: { role: { in: ["ADMIN", "SUPER_ADMIN"] } },
+  });
+  return admin?.id || "";
 }
