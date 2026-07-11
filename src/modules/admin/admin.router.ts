@@ -17,6 +17,8 @@ import {
   getEducationalPostsHandler, getEducationalPostByIdHandler, createEducationalPostHandler, updateEducationalPostHandler, deleteEducationalPostHandler,
   getAdminCoursesHandler, getAdminCourseByIdHandler, createCourseHandler, updateCourseHandler, deleteCourseHandler,
   getAdminToursHandler, getAdminTourByIdHandler, createTourHandler, updateTourHandler, deleteTourHandler,
+  getAdminSessionsHandler, getAdminSessionByIdHandler, createAdminSessionHandler, updateAdminSessionHandler, deleteAdminSessionHandler,
+  getAdminBookingsHandler, updateAdminBookingStatusHandler,
 } from "./admin.controller";
 
 const router = Router();
@@ -45,6 +47,18 @@ router.post("/products", createProductHandler);
 router.put("/products/:id", updateProductHandler);
 router.delete("/products/:id", deleteProductHandler);
 router.patch("/mentorship/sessions/:id/schedule", scheduleSessionHandler);
+
+// ── Mentorship Sessions (Admin CRUD) ─────────────
+router.get("/sessions", getAdminSessionsHandler);
+router.get("/sessions/:id", getAdminSessionByIdHandler);
+router.post("/sessions", createAdminSessionHandler);
+router.put("/sessions/:id", updateAdminSessionHandler);
+router.delete("/sessions/:id", deleteAdminSessionHandler);
+
+// ── Bookings (Admin) ─────────────────────────────
+router.get("/bookings", getAdminBookingsHandler);
+router.put("/bookings/:id/status", updateAdminBookingStatusHandler);
+
 router.get("/messages", getMessagesHandler);
 router.get("/messages/:id", getMessageByIdHandler);
 router.put("/messages/:id/read", markMessageAsReadHandler);

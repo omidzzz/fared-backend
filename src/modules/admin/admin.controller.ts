@@ -151,6 +151,64 @@ export async function scheduleSessionHandler(req: Request, res: Response, next: 
   } catch (e) { next(e); }
 }
 
+// ── Mentorship Sessions (Admin CRUD) ─────────────
+
+export async function getAdminSessionsHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { page, limit } = parsePagination(req.query as any);
+    const { search } = req.query;
+    const result = await adminService.getAdminSessions(page, limit, search as string | undefined);
+    sendPaginated(res, result.sessions, result.total, page, limit, "sessions");
+  } catch (e) { next(e); }
+}
+
+export async function getAdminSessionByIdHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const session = await adminService.getAdminSessionById(req.params.id as string);
+    sendSuccess(res, { session });
+  } catch (e) { next(e); }
+}
+
+export async function createAdminSessionHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const session = await adminService.createAdminSession(req.body);
+    sendSuccess(res, { session }, 201, "Session created");
+  } catch (e) { next(e); }
+}
+
+export async function updateAdminSessionHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const session = await adminService.updateAdminSession(req.params.id as string, req.body);
+    sendSuccess(res, { session }, 200, "Session updated");
+  } catch (e) { next(e); }
+}
+
+export async function deleteAdminSessionHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    await adminService.deleteAdminSession(req.params.id as string);
+    sendSuccess(res, null, 200, "Session deleted");
+  } catch (e) { next(e); }
+}
+
+// ── Bookings (Admin) ─────────────────────────────
+
+export async function getAdminBookingsHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { page, limit } = parsePagination(req.query as any);
+    const { status } = req.query;
+    const result = await adminService.getAdminBookings(page, limit, status as string | undefined);
+    sendPaginated(res, result.bookings, result.total, page, limit, "bookings");
+  } catch (e) { next(e); }
+}
+
+export async function updateAdminBookingStatusHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { status } = req.body;
+    const booking = await adminService.updateAdminBookingStatus(req.params.id as string, status);
+    sendSuccess(res, { booking }, 200, "Booking status updated");
+  } catch (e) { next(e); }
+}
+
 // ── Orders (single entity) ───────────────────────
 
 export async function getOrderByIdHandler(req: Request, res: Response, next: NextFunction) {

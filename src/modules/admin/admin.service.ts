@@ -552,6 +552,164 @@ export async function scheduleSession(sessionId: string, scheduledAt: string) {
   return session;
 }
 
+// ── Mentorship Sessions (Admin) ───────────────────
+
+export async function getAdminSessions(page: number, limit: number, search?: string) {
+  const where: any = {};
+  if (search) {
+    where.OR = [
+      { user: { nameFA: { contains: search } } },
+      { user: { phone: { contains: search } } },
+      { mentor: { nameFA: { contains: search } } },
+    ];
+  }
+
+  const [sessions, total] = await Promise.all([
+    prisma.mentorshipSession.findMany({
+      where,
+      include: {
+        user: { select: { id: true, nameFA: true, phone: true, email: true } },
+        mentor: { select: { id: true, nameFA: true, nameEN: true } },
+        order: { select: { id: true, orderNumber: true, paymentStatus: true, total: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.mentorshipSession.count({ where }),
+  ]);
+
+  return { sessions, total };
+}
+
+export async function getAdminSessionById(id: string) {
+  const session = await prisma.mentorshipSession.findUnique({
+    where: { id },
+    include: {
+      user: { select: { id: true, nameFA: true, phone: true, email: true } },
+      mentor: { select: { id: true, nameFA: true, nameEN: true, bioFA: true } },
+      order: true,
+    },
+  });
+  if (!session) throw new AppError("Session not found", 404);
+  return session;
+}
+
+export async function createAdminSession(data: any) {
+  const { userId, mentorId, notes, scheduledAt } = data;
+
+  const session = await prisma.mentorshipSession.create({
+    data: {
+      userId,
+      mentorId,
+      notes: notes ?? null,
+      scheduledAt: scheduledAt ? new Date(scheduledAt) : null,
+      status: scheduledAt ? BookingStatus.SCHEDULED : BookingStatus.PENDING,
+    },
+    include: {
+      user: { select: { id: true, nameFA: true, phone: true } },
+      mentor: { select: { id: true, nameFA: true } },
+    },
+  });
+
+  return session;
+}
+
+export async function updateAdminSession(id: string, data: any) {
+  const updateData: any = { ...data };
+  if (data.scheduledAt) {
+    updateData.scheduledAt = new Date(data.scheduledAt);
+    if (!updateData.status) updateData.status = BookingStatus.SCHEDULED;
+  }
+  if (data.status) {
+    updateData.status = data.status as BookingStatus;
+  }
+
+  const session = await prisma.mentorshipSession.update({
+    where: { id },
+    data: updateData,
+    include: {
+      user: { select: { id: true, nameFA: true, phone: true } },
+      mentor: { select: { id: true, nameFA: true } },
+    },
+  });
+
+  return session;
+}
+
+export async function deleteAdminSession(id: string) {
+  return prisma.mentorshipSession.delete({ where: { id } });
+}
+
+// ── Bookings (Admin) ──────────────────────────────
+
+export async function getAdminBookings(page: number, limit: number, status?: string) {
+  const where: any = {};
+  if (status) where.status = status;
+
+  const [bookings, total] = await Promise.all([
+    prisma.mentorshipSession.findMany({
+      where,
+      include: {
+        user: { select: { id: true, nameFA: true, phone: true, email: true } },
+        mentor: { select: { id: true, nameFA: true, nameEN: true } },
+        order: { select: { id: true, orderNumber: true, paymentStatus: true, total: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * limit,
+      take: limit,
+    }),
+    prisma.mentorshipSession.count({ where }),
+  ]);
+
+  return { bookings, total };
+}
+
+export async function updateAdminBookingStatus(id: string, status: string) {
+  const session = await prisma.mentorshipSession.update({
+    where: { id },
+    data: { status: status as BookingStatus },
+    include: {
+      user: { select: { id: true, nameFA: true, phone: true } },
+      mentor: { select: { id: true, nameFA: true } },
+    },
+  });
+
+  // Send notification to user
+  const statusMessages: Record<string, { title: string; body: string }> = {
+    PENDING: {
+      title: "جلسه منتورشیپ در انتظار پردازش",
+      body: "جلسه منتورشیپ شما در صف پردازش قرار گرفت.",
+    },
+    SCHEDULED: {
+      title: "جلسه منتورشیپ برنامه‌ریزی شد",
+      body: "جلسه منتورشیپ شما برنامه‌ریزی شد.",
+    },
+    COMPLETED: {
+      title: "جلسه منتورشیپ تکمیل شد",
+      body: "جلسه منتورشیپ شما با موفقیت تکمیل شد.",
+    },
+    CANCELLED: {
+      title: "جلسه منتورشیپ لغو شد",
+      body: "جلسه منتورشیپ شما لغو شد.",
+    },
+  };
+
+  const message = statusMessages[status] || { title: "بروزرسانی جلسه", body: "وضعیت جلسه بروزرسانی شد." };
+
+  await prisma.notification.create({
+    data: {
+      userId: session.userId,
+      type: NotificationType.MENTORSHIP_REMINDER,
+      titleFA: message.title,
+      bodyFA: message.body,
+      data: { sessionId: session.id },
+    },
+  });
+
+  return session;
+}
+
 // ── Product (single) ──────────────────────────────
 
 export async function getProductById(id: string) {
